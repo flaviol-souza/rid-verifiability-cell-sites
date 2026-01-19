@@ -21,21 +21,19 @@ The approach addresses the **Critical Asymmetry** between the physical signal an
 
 ## 📂 Repository Structure
 
-The artifacts are organized to ensure reproducibility of the **SBRC 2025** results:
+The artifacts are organized to ensure reproducibility of the **SBRC 2026** results:
 
 ```text
 ├── data/
-│   ├── raw/
-│   │   └── Estacoes_SMP_interlagos.csv    # Real ANATEL dataset of cellular towers (TIM, CLARO, VIVO)
+│   └── Estacoes_SMP_interlagos.csv    # Real ANATEL dataset of cellular towers (Operadora I, Operadora II, Operadora III)
 │   └── outputs/
 │       ├── bucket_metrics_remoteid.csv    # Processed time-series metrics (N_detecting, RSSI, etc.)
 │       └── top_15_risk_buckets.csv        # Identified "Risk Windows" (Blind spots > 15s)
 │
 ├── src/
-│   ├── simulation/
-│   │   └── main_simulation.py             # Core logic: Path Loss Model, Spoofing Injection, epsilon calculation
+│   └── remoteid_with_antispoof.py         # Core logic: Path Loss Model, Spoofing Injection, epsilon calculation
 │   ├── visualization/
-│   │   ├── plot_risk_series.py            # Generates Figure 5 (Time Series Analysis)
+│   │   ├── serie_temporal.py              # Generates Figure 5 (Time Series Analysis)
 │   │   └── generate_heatmap.py            # Generates the HTML coverage map
 │
 ├── results/
@@ -69,8 +67,8 @@ The artifacts are organized to ensure reproducibility of the **SBRC 2025** resul
 ### 1. Setup Environment
 
 ```bash
-git clone [https://github.com/yourusername/sbrc2025-opportunistic-rid.git](https://github.com/yourusername/sbrc2025-opportunistic-rid.git)
-cd sbrc2025-opportunistic-rid
+git clone [https://https://github.com/flaviol-souza/cs-rid-spoofing.git](https://https://github.com/flaviol-souza/cs-rid-spoofing.git)
+cd cs-rid-spoofing
 pip install -r requirements.txt
 
 ```
@@ -80,7 +78,7 @@ pip install -r requirements.txt
 Execute the main script to process the flight paths, inject attacks, and calculate metrics.
 
 ```bash
-python src/simulation/main_simulation.py
+python src/remoteid_with_antispoof.py
 
 ```
 
@@ -142,20 +140,20 @@ The experiment evaluated the coverage and detection capabilities in the Interlag
 | **Recall** | **15.70%** | Limited by RF shadowing and antenna downtilt (blind spots). |
 | **Max Outage** | **~1 Hour** | Critical vulnerability identified in flight `F6Z9...33B85`. |
 
-*Full analysis available in the SBRC 2025 paper.*
+*Full analysis available in the SBRC 2026 paper.*
 
 ---
 
 ## 🤝 Citation
 
-If you use this code or dataset in your research, please cite our **SBRC 2025** paper:
+If you use this code or dataset in your research, please cite our **SBRC 2026** paper:
 
 ```bibtex
-@inproceedings{souza2025sbrc,
+@inproceedings{souza2026sbrc,
   title={Além do Remote ID: Verificação de Consistência Físico-Digital de VANTs via Redes Celulares Oportunistas},
   author={Souza, Flavio L. S. and Ribeiro, Carlos H. C. and Gurtov, Andrei and Junior, Lourenço A. P.},
   booktitle={Anais do XLIII Simpósio Brasileiro de Redes de Computadores e Sistemas Distribuídos (SBRC)},
-  year={2025},
+  year={2026},
   publisher={SBC},
   address={Brazil}
 }
