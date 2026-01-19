@@ -42,7 +42,7 @@ FILTER_FLIGHT_IDS = None    # ex: {"1ZNBK5900C00A8"} (ou None)
 FILTER__TECH = None
 
 # --- Modelo de rádio / Remote ID ---
-MODEL = "fspl"  # "fspl" (recomendado p/ 2.4 GHz) ou "cost231" (aproximação macrocelular)
+MODEL = "fspl"  # "fspl" (p/ 2.4 GHz) ou "cost231" (aproximação macrocelular)
 
 REMOTEID_FREQ_MHZ = 2400.0   # ex: 2400 (Wi-Fi/BLE) — ajuste para o seu Remote ID
 DRONE_EIRP_DBM = 20.0        # potência efetiva do transmissor Remote ID (ajuste/calibre)
@@ -50,7 +50,7 @@ SNIFFER_ANT_GAIN_DB = 0.0    # ganho antena do sniffer na torre (se quiser)
 SNIFFER_CABLE_LOSS_DB = 0.0  # perdas de cabo/conector no sniffer (se quiser)
 EXTRA_CLUTTER_LOSS_DB = 15.0 # perdas adicionais (urbanização/NLoS/interferência) — calibração principal
 
-DETECTION_THRESHOLD_DBM = -90.0  # limiar de detecção do sniffer (sensibilidade efetiva)
+DETECTION_THRESHOLD_DBM = -92.0  # limiar de detecção do sniffer (sensibilidade efetiva)
 
 # Alturas
 TOWER_HEIGHT_M = 30.0        # altura típica do sniffer na torre (se não tiver no CSV)
@@ -100,6 +100,8 @@ LOGDIST_RSSI0_DBM = None            # se None, calcula a partir de FSPL em d0 e 
 EPS_HONEST_MAX = 0.2
 EPS_ATTACK_MIN = 1.0
 EPS_DECISION_THRESHOLD = 0.6        # limiar p/ classificar "ataque" e montar matriz de confusão
+
+OUTPUTS = "outputs"
 
 # -----------------------------
 # UTILITÁRIOS
@@ -270,8 +272,6 @@ def load_towers(csv_path: str, sep: str) -> TowerData:
     tree = BallTree(coords_rad, metric="haversine")
 
     return TowerData(df=df, lat=lat, lon=lon, op=op, tower_id=tower_id, tree=tree, tech=tech)
-
-
 
 # -----------------------------
 # ANTI-SPOOFING (Consistência Físico–Digital)
@@ -496,11 +496,11 @@ def compute_physdig_consistency_metrics(
     print(f"Precision={precision:.3f} | Recall/TPR={recall:.3f} | FPR={fpr:.3f}")
 
     # salva outputs
-    out_csv = "antispoof_point_metrics.csv"
+    out_csv = OUTPUTS+"antispoof_point_metrics.csv"
     out.to_csv(out_csv, index=False)
     print(f"Detalhes ponto-a-ponto salvos em: {out_csv}")
 
-    cm_csv = "antispoof_confusion_matrix.csv"
+    cm_csv = OUTPUTS+"antispoof_confusion_matrix.csv"
     pd.DataFrame([{
         "threshold_epsilon": float(EPS_DECISION_THRESHOLD),
         "TN": tn, "FP": fp_, "FN": fn, "TP": tp,
@@ -1087,7 +1087,7 @@ def main():
 
         folium.LayerControl(collapsed=False).add_to(m)
 
-        out_html = "remoteid_heatmap_cobertura.html"
+        out_html = OUTPUTS+"remoteid_heatmap_cobertura.html"
         m.save(out_html)
         print(f"OK! Mapa salvo em: {out_html}")
         print("Dicas de calibração:")
