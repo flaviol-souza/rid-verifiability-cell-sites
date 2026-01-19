@@ -8,11 +8,16 @@
 
 ## 📋 Abstract
 
-This project implements a **Cross-Layer Security Framework** designed to detect GPS Spoofing attacks in Unmanned Aerial Systems (UAS). Unlike traditional methods that rely on expensive primary radars, this approach leverages **Opportunistic Cellular Networks (4G/5G)**.
+This project implements a **Cross-Layer Security Framework** designed to detect GPS Spoofing attacks in Unmanned Aerial Systems (UAS). Unlike traditional methods that rely on expensive primary radars, this approach leverages **Opportunistic Cellular Networks (5G)**.
 
 By transforming existing Base Stations (gNB/eNB) into passive sniffers, the system validates the **Physical-Digital Consistency** of *Remote ID* packets. It compares the reported telemetry (Digital Layer) against the estimated location derived from RSSI and path-loss physics (Physical Layer) using a Trace-Driven simulation based on real infrastructure data from the **Interlagos F1 Circuit (São Paulo, Brazil)**.
 
----
+## 🖼️ System Overview (Problem vs. Solution)
+
+The approach addresses the **Critical Asymmetry** between the physical signal and the digital data. While *Remote ID* validates *who* is speaking, our system validates *where* the sender is physically located.
+
+![Concept of Physical-Digital Consistency](fisico_vs_digital.png)
+[cite_start]*> Figure 1: The attack scenario where an authenticated UAV reports a false position (Digital World) while occupying a restricted zone (Physical World), and the proposed detection via cellular infrastructure.*
 
 ## 📂 Repository Structure
 
