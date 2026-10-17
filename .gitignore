@@ -22,6 +22,18 @@
 
 notes.md
 
+# Preserve only the reviewed G0 evidence; keep all other result outputs private.
+/results/*
+!/results/g0_data/
+!/results/g0_data/20261016T193702Z/
+!/results/g0_data/20261016T193702Z/g0_table.csv
+!/results/g0_data/20261016T193702Z/cleaning_log.csv
+!/results/g0_data/20261016T193702Z/provenance.yaml
+!/results/g0_data/20261016T213222Z/
+!/results/g0_data/20261016T213222Z/g0_table.csv
+!/results/g0_data/20261016T213222Z/cleaning_log.csv
+!/results/g0_data/20261016T213222Z/provenance.yaml
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/

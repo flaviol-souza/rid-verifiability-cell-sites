@@ -1,0 +1,47 @@
+G0: FAIL
+config:
+  g0:
+    agl_p50_range_m:
+    - 10.0
+    - 120.0
+    max_speed_excluded_frac: 0.01
+    min_retained_agl_m: -5.0
+  stage_a:
+    altitude_reference: unconfirmed; assumed orthometric (EGM2008)
+    anatel_sha256: 311c85de3c187ebd2a35c48c99484011dbec784b10bf1a8a761444e02338da8e
+    hmac_key_env: DSV2_HMAC_KEY
+    leak_test_ignore:
+    - encrypted
+    - MissionAlpha
+    max_ground_speed_mps: 40.0
+    min_agl_m: 5.0
+    paths:
+      anatel: data/external/anatel/Estacoes_SMP_interlagos.csv
+      dem: data/external/terrain/glo30_interlagos_crop.tif
+      domain: data/external/roi/domain.geojson
+      flights_anon: data/external/flights/flights_anon.csv
+      flights_raw: data/external/flights/raw/utm_points_with_flightid.csv
+      interim_dir: data/interim
+      results_dir: results/g0_data
+      roi: data/external/roi/roi.geojson
+    pseudonym_hex_chars: 12
+    pseudonym_prefix: uas_
+    sentinel_min_alt_msl_m: 100.0
+    session_gap_s: 60.0
+config_file: experiments\configs\reference.yaml
+created_utc: 20261016T193702Z
+failing:
+- speed_excluded_frac_ok
+git_commit: 5cf7b37be61503bcfa473be98f90baaea2abde29-dirty
+inputs_sha256:
+  anatel: 311c85de3c187ebd2a35c48c99484011dbec784b10bf1a8a761444e02338da8e
+  dem: 00b3d6784146a2d941acdaa01874cd5dd5bf030eeebfa0af9ff38e6c2ac08245
+  domain: db68a6cb5106665d766b860df1d260743faa72d6ee1e63921214c2ab5628defb
+  roi: 7436998949f7a54c82f7322b575a4620b2bdab8d180de6064854b196edfe6b8e
+outputs_sha256:
+  cleaning_log: b125603ec9d15bf619fb7ef6dc77fc12f72b3abc96523ece4c35d2c9b683919e
+  flights_anon: 55f69a1a1936f6ddc54ee7b7128a30832d31812083dc014dba49b6512f6f1c37
+  samples: d7637404e5c31bb50d0d15050027bad5d1328c2e5a9e5b682838f7c74172c192
+  sites: 3a50c48628fb3d332f4fcd3af5a1b0377afca735aec0d9d1e897a27b96f870c1
+pandas: 3.0.6
+python: 3.12.10
