@@ -42,3 +42,7 @@ stage_b:
   paths:
     observations_dir: data/raw/observations
     results_dir: results/stage_b
+  sweep: range
+  range_grid_m: [100, 200, 300, 500, 750, 1000]
+  range_ref_m: null
+  h2_min_effect: 0.10

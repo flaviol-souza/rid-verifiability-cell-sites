@@ -55,3 +55,38 @@ def per_sample_bounds(obs, eta: float, sigma_db: float):
         rows.append((sid, len(g), crlb_h_m(dxy, d3, eta, sigma_db, False),
                      crlb_h_m(dxy, d3, eta, sigma_db, True), hdop(dxy)))
     return pd.DataFrame(rows, columns=["sample_id", "n_obs", "sigma_h_v3_m", "sigma_h_v4_m", "hdop"])
+
+
+def per_sample_bounds_fast(obs, eta: float, sigma_db: float, cond_max: float = 1e12):
+    """Vectorized equivalent of per_sample_bounds (same definitions; tested against it).
+    J components are summed per sample; V4 uses the Schur complement of the power term."""
+    import pandas as pd
+    h = obs[obs["heard"]]
+    b = 10.0 * eta / (sigma_db * np.log(10.0))
+    d2 = h["d3_m"].to_numpy() ** 2
+    gx = b * h["dx_m"].to_numpy() / d2
+    gy = b * h["dy_m"].to_numpy() / d2
+    gp = np.full(len(h), 1.0 / sigma_db)
+    dh = np.hypot(h["dx_m"].to_numpy(), h["dy_m"].to_numpy())
+    ux, uy = h["dx_m"].to_numpy() / dh, h["dy_m"].to_numpy() / dh
+    df = pd.DataFrame({"sample_id": h["sample_id"].to_numpy(), "n": 1,
+                       "xx": gx * gx, "xy": gx * gy, "yy": gy * gy, "xp": gx * gp, "yp": gy * gp, "pp": gp * gp,
+                       "uxx": ux * ux, "uxy": ux * uy, "uyy": uy * uy})
+    s = df.groupby("sample_id", sort=True).sum()
+
+    def trace_inv_2x2(a, c, d):          # [[a, c], [c, d]]
+        det = a * d - c * c
+        tr = a + d
+        ok = (det > 0) & (tr * tr / np.where(det > 0, det, np.inf) < cond_max)
+        return np.where(ok, np.sqrt(np.where(ok, tr / np.where(det > 0, det, 1.0), np.inf)), np.inf)
+
+    v3 = trace_inv_2x2(s["xx"], s["xy"], s["yy"])
+    v3 = np.where(s["n"] >= 2, v3, np.inf)
+    a = s["xx"] - s["xp"] ** 2 / s["pp"]
+    c = s["xy"] - s["xp"] * s["yp"] / s["pp"]
+    d = s["yy"] - s["yp"] ** 2 / s["pp"]
+    v4 = np.where(s["n"] >= 3, trace_inv_2x2(a, c, d), np.inf)
+    hd = np.where(s["n"] >= 2, trace_inv_2x2(s["uxx"], s["uxy"], s["uyy"]), np.inf)
+    return pd.DataFrame({"sample_id": s.index.to_numpy(), "n_obs": s["n"].to_numpy(),
+                         "sigma_h_v3_m": np.asarray(v3, dtype=float), "sigma_h_v4_m": np.asarray(v4, dtype=float),
+                         "hdop": np.asarray(hd, dtype=float)})
