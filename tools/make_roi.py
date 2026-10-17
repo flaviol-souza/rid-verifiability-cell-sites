@@ -75,15 +75,15 @@ g = fp.groupby("flight_id")
 placeholder = (g.timestamp.transform("nunique") == 1) & (g.lat.transform("nunique") == 1) & (g.lon.transform("nunique") == 1)
 fp = fp[(fp.alt > 100) & fp.flight_id.isin(set(fp.flight_id[in_box])) & ~placeholder].drop_duplicates(["flight_id", "timestamp"])
 xy = [Point(fwd(x, y)) for x, y in zip(fp.lon, fp.lat)]
-inside = np.array([roi_m.contains(p) for p in xy])
-s_in = np.array([cand_m.contains(Point(fwd(x, y))) for x, y in zip(s.lon, s.lat)])
+inside = np.array([roi_m.contains(p) for p in xy], dtype=bool)
+s_in = np.array([cand_m.contains(Point(fwd(x, y))) for x, y in zip(s.lon, s.lat)], dtype=bool)
 
 # Analysis domain: where the site inventory is complete within R_max.
 # The ANATEL query area contains the bounding box of the returned sites, so eroding that box by R_max is conservative.
 sx, sy = zip(*[fwd(x, y) for x, y in zip(s.lon, s.lat)])
 dom_m = box(min(sx), min(sy), max(sx), max(sy)).buffer(-a.rmax_m, join_style=2)
 assert not dom_m.is_empty, "analysis domain is empty: R_max too large for the site extract"
-in_dom = np.array([dom_m.contains(p) for p in xy])
+in_dom = np.array([dom_m.contains(p) for p in xy], dtype=bool)
 in_roi_and_dom = inside & in_dom
 roi_in_dom = roi_m.intersection(dom_m).area / roi_m.area
 

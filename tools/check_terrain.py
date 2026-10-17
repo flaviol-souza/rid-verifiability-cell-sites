@@ -38,7 +38,7 @@ with rasterio.open(a.dem) as src:
     fp = pd.read_csv(a.flights, dtype={"flight_id": str})
     fp["timestamp"] = pd.to_datetime(fp["timestamp"], utc=True)
     # Rule-based (no serial literals in tracked code): serials never inside the site bbox, and placeholders.
-    in_box = fp.lat.between(sites.lat.min(), sites.lat.max()) & fp.lon.between(sites.lon.min(), sites.lon.max())
+    in_box = (fp.lat.between(sites.lat.min(), sites.lat.max()) & fp.lon.between(sites.lon.min(), sites.lon.max())).to_numpy(dtype=bool)
     g = fp.groupby("flight_id")
     placeholder = (g.timestamp.transform("nunique") == 1) & (g.lat.transform("nunique") == 1) & (g.lon.transform("nunique") == 1)
     fp = fp[(fp.alt > 100) & fp.flight_id.isin(set(fp.flight_id[in_box])) & ~placeholder]
