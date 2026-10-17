@@ -31,7 +31,7 @@ The artifacts are organized to ensure reproducibility of the **SBRC 2026** resul
 │       └── top_15_risk_buckets.csv        # Identified "Risk Windows" (Blind spots > 15s)
 │
 ├── src/
-│   └── remoteid_with_antispoof.py         # Core logic: Path Loss Model, Spoofing Injection, epsilon calculation
+│   └── research.md                       # Research scope, questions and evidence map
 │   ├── visualization/
 │   │   ├── serie_temporal.py              # Generates Figure 5 (Time Series Analysis)
 │   │   └── generate_heatmap.py            # Generates the HTML coverage map
@@ -78,7 +78,7 @@ pip install -r requirements.txt
 Execute the main script to process the flight paths, inject attacks, and calculate metrics.
 
 ```bash
-python src/remoteid_with_antispoof.py
+See `research.md` for the current research scope and reproducibility workflow.
 
 ```
 
