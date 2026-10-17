@@ -68,11 +68,12 @@ $$P_{rx,i}(t) = P_{EIRP} - PL_0 - 10\,\eta\log_{10}\frac{d_i(t)}{d_0} + X_i(t)$$
 - $X_i(t)$: AR(1) along path distance, $\rho = e^{-\Delta s/d_{corr}}$; $d_{corr}=0$ gives i.i.d. (⚠ BM-9).
 - Candidate sites: all sites within R_max = 1 km of the sample (sites never clipped).
 - Heard if $P_{rx,i} \ge \gamma$; unheard pairs recorded as unheard (T6).
+- **Inventory truncation rule:** candidate sites are limited to r_max (the radius within which the site inventory is complete). If $P(\text{heard at } r_{max}) > 1\%$ for a (channel, R) cell, observability there is reported as a **lower bound** and flagged (`truncated`). With r_max = 1 km, σ = 6 dB, η = 2.2 this holds for R ≤ ≈ 232 m (BM-32).
 
 | Family | Parameters | Source |
 |--------|-----------|--------|
 | C1 | η = 2.2, σ = 6 dB | Generic, declared assumption |
-| C2 | Exponent, PL(d0), σ fitted on real Remote ID flights | GhostBuster (⚠ BM-1); used only inside its fitted range |
+| C2 | Exponent, PL(d0) fitted on real Remote ID flights | GhostBuster Table III (BM-1): exponents 0.84–1.35, fitted range not stated → not extrapolable; shape sensitivity only, pending BM-31 |
 
 P_EIRP = 20 dBm (Holybro Remote ID datasheet, ERP used as EIRP, BM-25). γ = −95 dBm (⚠ BM-8), swept over 7 levels. Report the implied range $R = d_0\,10^{(P_{EIRP}-PL_0-\gamma)/(10\eta)}$ next to every result.
 

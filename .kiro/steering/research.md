@@ -187,7 +187,9 @@ V reuses O's observations (no new simulation). Expected cost: minutes to hours o
 
 | # | Description | Priority | Type |
 |---|-------------|----------|------|
-| BM-1 | Transcribe GhostBuster's fitted log-distance parameters (exponent, PL(d0), σ, fitted range) → channel family C2 | **High — blocks G2** | HITL |
+| BM-1 | **Transcribed 17 Oct 2026** from the authors' PDF (Sect. V-B Eq. 1; Table III): per-UA exponent 1.35 / 0.9 / 0.84 and PL(d0) 58.07 / 70.82 / 69.88 dB at d0 = 1 m; σ of the fit not stated (simulations use 3.5 dB; real-data results at σ ≈ 4.5 dB, Sect. VI-C); noise floor ≈ −95 dBm (Sect. VI-A); transmit power and fitted distance range **not stated**. Consequence: exponents < 2 cannot be extrapolated (at 20 dBm they imply ranges of tens of km), so C2 **cannot anchor R**; at most a sensitivity check of the curve shape. ⚠ Confirm by reading Table III yourself | Resolved (negative) | HITL check |
+| **BM-31** | **Anchor for the implied range R.** No primary measurement of Broadcast Remote ID reception range found yet (Høffer et al., IMAV 2024, only cite "a few hundred meters" from a reference; their 1.6 km is a relay chain). Proposal: sweep R directly (100/200/300/500/750/1000 m) instead of γ, keep C1 shape (η = 2.2, σ = 6 dB), and report every result vs R | **High — blocks G2** | HITL decision |
+| **BM-32** | **Inventory truncation.** With r_max = 1 km and σ = 6 dB, P(heard at 1 km) ≤ 1% only for R ≤ ≈ 232 m; larger R makes observability a lower bound. Options: extend the ANATEL extract (r_max 3 km → R ≤ ≈ 700 m; 5 km → ≈ 1.16 km) or restrict the R sweep. Also document how the extract was queried (BM-7 follow-up) | **High — blocks G2** | HITL decision |
 | BM-2 | DEM — **resolved** (GLO-30, hashes frozen; DSM limitation declared) | Resolved | — |
 | BM-3 | h_rx = 30 m AGL (assumption); S-block 15/45 m | Default | — |
 | BM-4 | T_gap = 60 s — **resolved**; recount sessions after G0-v2 | Resolved | — |
