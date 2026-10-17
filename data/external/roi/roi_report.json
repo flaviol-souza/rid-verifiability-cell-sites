@@ -1,0 +1,25 @@
+{
+ "source": "OSM relation 2560355, Nominatim polygon export, accessed 2026-10-16; Overpass query recorded in input metadata",
+ "buffer_m": 0.0,
+ "rmax_m": 1000.0,
+ "area_km2": 0.905,
+ "flight_samples_inside_frac": 0.8176,
+ "flight_samples_inside": 13407,
+ "flight_samples_total": 16398,
+ "sites_within_rmax": 87,
+ "sites_total": 109,
+ "domain_area_km2": 4.685,
+ "flight_samples_in_domain": 14900,
+ "flight_samples_in_domain_frac": 0.9086,
+ "flight_samples_in_roi_and_domain": 12557,
+ "flight_samples_in_roi_and_domain_frac": 0.7658,
+ "roi_fraction_inside_domain": 0.9198,
+ "sites_within_rmax_by_operator": {
+  "VIVO": 49,
+  "CLARO": 23,
+  "TIM": 15
+ },
+ "created_utc": "2026-10-16T16:59:16+00:00",
+ "sha256_roi_geojson": "aa5c905ab40636a7738f34f87fca6c1a531cc9ebc36ad44b51e989d178b0f4d4",
+ "sha256_domain_geojson": "fa8acba71f24b4def76a33b300b669da1147844265cbd74b3df26bf772417c79"
+}

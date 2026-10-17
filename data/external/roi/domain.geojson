@@ -1,0 +1,39 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "analysis_domain",
+    "definition": "bbox of unique ANATEL sites eroded by R_max=1000.0 m (inventory complete within R_max)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -46.67919390794246,
+       -23.70608612334083
+      ],
+      [
+       -46.70239119432306,
+       -23.705832629243837
+      ],
+      [
+       -46.702159287111556,
+       -23.687953162750304
+      ],
+      [
+       -46.67896515712325,
+       -23.68820644276743
+      ],
+      [
+       -46.67919390794246,
+       -23.70608612334083
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
