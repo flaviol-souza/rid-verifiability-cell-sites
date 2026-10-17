@@ -64,15 +64,18 @@ def write_json(path: Path, payload: dict) -> None:
     """Write stable JSON bytes for reproducible generated artifacts."""
     text = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     path.write_text(text + "\n", encoding="utf-8")
-fp = pd.read_csv(a.flights, dtype={"flight_id": str})
-fp = fp[(fp.alt > 100) & (~fp.flight_id.isin(["1ZNBK5900C00A8", "MissionAlpha"]))].drop_duplicates(["flight_id", "timestamp"])
-xy = [Point(fwd(x, y)) for x, y in zip(fp.lon, fp.lat)]
-inside = np.array([roi_m.contains(p) for p in xy])
-
 tw = pd.read_csv(a.sites, sep=";", dtype=str)
 s = pd.DataFrame({"lat": pd.to_numeric(tw["Latitude decimal"].str.replace(",", ".")),
                   "lon": pd.to_numeric(tw["Longitude decimal"].str.replace(",", ".")),
                   "op": tw["Empresa Estação"]}).drop_duplicates(["lat", "lon"])
+
+fp = pd.read_csv(a.flights, dtype={"flight_id": str})
+in_box = fp.lat.between(s.lat.min(), s.lat.max()) & fp.lon.between(s.lon.min(), s.lon.max())
+g = fp.groupby("flight_id")
+placeholder = (g.timestamp.transform("nunique") == 1) & (g.lat.transform("nunique") == 1) & (g.lon.transform("nunique") == 1)
+fp = fp[(fp.alt > 100) & fp.flight_id.isin(set(fp.flight_id[in_box])) & ~placeholder].drop_duplicates(["flight_id", "timestamp"])
+xy = [Point(fwd(x, y)) for x, y in zip(fp.lon, fp.lat)]
+inside = np.array([roi_m.contains(p) for p in xy])
 s_in = np.array([cand_m.contains(Point(fwd(x, y))) for x, y in zip(s.lon, s.lat)])
 
 # Analysis domain: where the site inventory is complete within R_max.
