@@ -3,6 +3,7 @@ import hashlib
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
@@ -93,10 +94,14 @@ def test_make_roi_is_deterministic_and_preserves_source_geometry(tmp_path: Path)
     first = tmp_path / "first"
     second = tmp_path / "second"
     _run_generator(tmp_path, source, flights, sites, first)
+    time.sleep(1.1)
     _run_generator(tmp_path, source, flights, sites, second)
 
     assert _sha256(first / "roi.geojson") == _sha256(second / "roi.geojson")
     assert _sha256(first / "domain.geojson") == _sha256(second / "domain.geojson")
+    first_report = json.loads((first / "roi_report.json").read_text(encoding="utf-8"))
+    second_report = json.loads((second / "roi_report.json").read_text(encoding="utf-8"))
+    assert first_report["created_utc"] != second_report["created_utc"]
 
     source_geometry = json.loads(source.read_text(encoding="utf-8"))["features"][0]["geometry"]
     generated = json.loads((first / "roi.geojson").read_text(encoding="utf-8"))
