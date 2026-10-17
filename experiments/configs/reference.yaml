@@ -1,0 +1,25 @@
+# Reference configuration — Stage A part (DS-v2). Every value with its source in research.md/methods.md.
+stage_a:
+  hmac_key_env: DSV2_HMAC_KEY        # BM-6: name of the env var; the value is never stored
+  pseudonym_prefix: "uas_"
+  pseudonym_hex_chars: 12
+  sentinel_min_alt_msl_m: 100.0      # C5
+  session_gap_s: 60.0                # C6, BM-4
+  min_agl_m: 5.0                     # C8
+  max_ground_speed_mps: 40.0         # C9
+  anatel_sha256: "311c85de3c187ebd2a35c48c99484011dbec784b10bf1a8a761444e02338da8e"   # R2.2, data/external/anatel/README.md
+  leak_test_ignore: ["encrypted", "MissionAlpha"]   # literal non-serial values of flight_id
+  altitude_reference: "unconfirmed; assumed orthometric (EGM2008)"   # BM-27
+  paths:
+    flights_raw: data/external/flights/raw/utm_points_with_flightid.csv
+    flights_anon: data/external/flights/flights_anon.csv
+    anatel: data/external/anatel/Estacoes_SMP_interlagos.csv
+    dem: data/external/terrain/glo30_interlagos_crop.tif
+    roi: data/external/roi/roi.geojson
+    domain: data/external/roi/domain.geojson
+    interim_dir: data/interim
+    results_dir: results/g0_data
+g0:                                   # research.md, G0 — fixed before seeing data
+  agl_p50_range_m: [10.0, 120.0]
+  min_retained_agl_m: -5.0
+  max_speed_excluded_frac: 0.01
