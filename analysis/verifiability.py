@@ -62,13 +62,21 @@ def per_sample_bounds_fast(obs, eta: float, sigma_db: float, cond_max: float = 1
     J components are summed per sample; V4 uses the Schur complement of the power term."""
     import pandas as pd
     h = obs[obs["heard"]]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return _fast_bounds(h, eta, sigma_db, cond_max)
+
+
+def _fast_bounds(h, eta, sigma_db, cond_max):
+    import pandas as pd
     b = 10.0 * eta / (sigma_db * np.log(10.0))
     d2 = h["d3_m"].to_numpy() ** 2
     gx = b * h["dx_m"].to_numpy() / d2
     gy = b * h["dy_m"].to_numpy() / d2
     gp = np.full(len(h), 1.0 / sigma_db)
     dh = np.hypot(h["dx_m"].to_numpy(), h["dy_m"].to_numpy())
-    ux, uy = h["dx_m"].to_numpy() / dh, h["dy_m"].to_numpy() / dh
+    safe = dh > 0                                   # receiver right under the drone: no horizontal direction
+    ux = np.where(safe, h["dx_m"].to_numpy() / np.where(safe, dh, 1.0), 0.0)
+    uy = np.where(safe, h["dy_m"].to_numpy() / np.where(safe, dh, 1.0), 0.0)
     df = pd.DataFrame({"sample_id": h["sample_id"].to_numpy(), "n": 1,
                        "xx": gx * gx, "xy": gx * gy, "yy": gy * gy, "xp": gx * gp, "yp": gy * gp, "pp": gp * gp,
                        "uxx": ux * ux, "uxy": ux * uy, "uyy": uy * uy})
@@ -77,7 +85,7 @@ def per_sample_bounds_fast(obs, eta: float, sigma_db: float, cond_max: float = 1
     def trace_inv_2x2(a, c, d):          # [[a, c], [c, d]]
         det = a * d - c * c
         tr = a + d
-        ok = (det > 0) & (tr * tr / np.where(det > 0, det, np.inf) < cond_max)
+        ok = (det > 0) & (tr > 0) & (tr * tr / np.where(det > 0, det, np.inf) < cond_max)
         return np.where(ok, np.sqrt(np.where(ok, tr / np.where(det > 0, det, 1.0), np.inf)), np.inf)
 
     v3 = trace_inv_2x2(s["xx"], s["xy"], s["yy"])

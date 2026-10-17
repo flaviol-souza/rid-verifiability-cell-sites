@@ -37,6 +37,17 @@ def scenario_sites(sites: pd.DataFrame, scenario: str) -> pd.DataFrame:
     return sites[sites["operator"].str.split("|").apply(lambda ops: scenario in ops)]
 
 
+def apply_variant(samples: pd.DataFrame, sample_filter: str, agl: str) -> pd.DataFrame:
+    s = samples
+    if sample_filter == "exclude_group1":
+        s = s[s["group_size"] > 1]
+    elif sample_filter == "exclude_unanchored":
+        s = s[s["agl_anchor"] != "none"]
+    if agl == "dem":
+        s = s.assign(agl_m=s["agl_dem_m"])
+    return s.reset_index(drop=True)
+
+
 def levels(b: dict, ch: dict) -> list[tuple[float, float]]:
     """(range_m, gamma_dbm) pairs for the configured sweep."""
     if b.get("sweep", "range") == "range":
@@ -74,6 +85,9 @@ def main() -> int:
     ap.add_argument("--seeds", default=None, help="e.g. 0-4 (default: config seeds)")
     ap.add_argument("--scenarios", default=None, help="comma list (default: consortium + every operator)")
     ap.add_argument("--override", action="append", default=[], help="channel override key=value (block S)")
+    ap.add_argument("--sample-filter", default="none", choices=["none", "exclude_group1", "exclude_unanchored"],
+                    help="block S: drop samples from single-row messages, or sessions without an AGL anchor")
+    ap.add_argument("--agl", default="anchored", choices=["anchored", "dem"], help="block S: AGL variant used as drone height")
     a = ap.parse_args()
     root = Path(a.root).resolve()
     cfg = yaml.safe_load((root / a.config).read_text())
@@ -83,7 +97,7 @@ def main() -> int:
         k, v = ov.split("=", 1)
         ch[k] = type(ch[k])(v) if k in ch else float(v)
     interim = root / cfg["stage_a"]["paths"]["interim_dir"]
-    samples = pd.read_parquet(interim / "samples.parquet")
+    samples = apply_variant(pd.read_parquet(interim / "samples.parquet"), a.sample_filter, a.agl)
     sites = pd.read_parquet(interim / "sites.parquet")
     ops = sorted({o for ops in sites["operator"].str.split("|") for o in ops})
     scenarios = a.scenarios.split(",") if a.scenarios else ["consortium"] + ops
@@ -111,6 +125,7 @@ def main() -> int:
     tbl.to_parquet(out / "session_metrics.parquet", index=False)
     prov = {"created_utc": dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ"), "git_commit": _git_commit(root),
             "channel": ch, "stage_b": b, "scenarios": scenarios, "seeds": seeds, "overrides": a.override,
+            "sample_filter": a.sample_filter, "agl": a.agl, "n_samples": int(len(samples)),
             "n_cells": int(len(man)), "n_truncated_cells": int(man["truncated"].sum())}
     (out / "provenance.yaml").write_text(yaml.safe_dump(prov, sort_keys=True), newline="\n")
     print(f"{len(man)} cells ({int(man['truncated'].sum())} truncated) -> {out.relative_to(root)}")
