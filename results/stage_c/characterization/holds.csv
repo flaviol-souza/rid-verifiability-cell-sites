@@ -1,0 +1,4 @@
+quantity,n,p5,p25,p50,p75,p95
+position_hold_s,534,1.0,9.0,18.0,32.0,78.35
+logging_interval_s,12114,1.0,1.0,1.0,1.0,2.0
+frac_steps_without_position_change,12114,,,0.9559,,

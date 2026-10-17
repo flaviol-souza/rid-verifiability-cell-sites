@@ -39,6 +39,9 @@ notes.md
 !/results/g0_data/20261016T213222Z/g0_table.csv
 !/results/g0_data/20261016T213222Z/cleaning_log.csv
 !/results/g0_data/20261016T213222Z/provenance.yaml
+!/results/stage_c/
+!/results/stage_c/characterization/
+!/results/stage_c/characterization/*.csv
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
