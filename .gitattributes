@@ -1,0 +1,7 @@
+* text=auto eol=lf
+data/** -text
+*.geojson -text
+*.json -text
+*.csv -text
+*.parquet binary
+*.tif binary
