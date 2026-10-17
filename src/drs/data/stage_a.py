@@ -123,7 +123,9 @@ def _publish_drone_track(drone: pd.DataFrame, p: dict, a: dict) -> None:
     pub["timestamp"] = pub.pop("t_utc").dt.strftime("%Y-%m-%dT%H:%M:%SZ")
     p["flights_anon"].parent.mkdir(parents=True, exist_ok=True)
     pub.to_csv(p["flights_anon"], index=False, lineterminator="\n")
-    p["flights_anon"].with_suffix(".sha256").write_text(f"{sha256(p['flights_anon'])}  {p['flights_anon'].name}\n")
+    p["flights_anon"].with_suffix(".sha256").write_text(
+        f"{sha256(p['flights_anon'])}  {p['flights_anon'].name}\n", newline="\n"
+    )
 
 
 def g0_evaluate(samples: pd.DataFrame, log: pd.DataFrame, cfg: dict, domain, diag: dict | None = None) -> dict:

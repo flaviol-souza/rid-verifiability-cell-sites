@@ -63,7 +63,7 @@ def round_coordinates(value):
 def write_json(path: Path, payload: dict) -> None:
     """Write stable JSON bytes for reproducible generated artifacts."""
     text = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    path.write_text(text + "\n", encoding="utf-8")
+    path.write_text(text + "\n", encoding="utf-8", newline="\n")
 tw = pd.read_csv(a.sites, sep=";", dtype=str)
 s = pd.DataFrame({"lat": pd.to_numeric(tw["Latitude decimal"].str.replace(",", ".")),
                   "lon": pd.to_numeric(tw["Longitude decimal"].str.replace(",", ".")),

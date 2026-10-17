@@ -58,11 +58,16 @@ def main() -> int:
     prov = {"created_utc": stamp, "git_commit": _git_commit(root), "config_file": args.config,
             "config": cfg, "inputs_sha256": inputs, "outputs_sha256": outputs,
             "pandas": pd.__version__, "python": sys.version.split()[0], "G0": g0["G0"], "failing": g0["failing"]}
-    (out / "provenance.yaml").write_text(yaml.safe_dump(prov, sort_keys=True, allow_unicode=True))
+    (out / "provenance.yaml").write_text(
+        yaml.safe_dump(prov, sort_keys=True, allow_unicode=True), newline="\n"
+    )
     print(pd.read_csv(out / "g0_table.csv").to_string(index=False))
     print(f"\nG0 = {g0['G0']}  ->  {out.relative_to(root)}")
     if g0["G0"] == "FAIL":
-        (out / "G0_FAILED.txt").write_text("Failing criteria: " + ", ".join(g0["failing"]) + "\nDo not run downstream stages.\n")
+        (out / "G0_FAILED.txt").write_text(
+            "Failing criteria: " + ", ".join(g0["failing"]) + "\nDo not run downstream stages.\n",
+            newline="\n",
+        )
         return 1
     return 0
 
