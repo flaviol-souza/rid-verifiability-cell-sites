@@ -42,7 +42,11 @@ def _write_inputs(tmp_path: Path) -> tuple[Path, Path, Path]:
     flights = tmp_path / "flights.csv"
     flights.write_text(
         "flight_id,timestamp,alt,lon,lat\n"
-        "uas-original,2026-01-01T00:00:00Z,150,-46.695,-23.695\n",
+        "uas-valid,2026-01-01T00:00:00Z,150,-46.695,-23.695\n"
+        "uas-valid,2026-01-01T00:00:01Z,150,-46.694,-23.694\n"
+        "uas-outside,2026-01-01T00:00:00Z,150,-46.80,-23.80\n"
+        "uas-outside,2026-01-01T00:00:01Z,150,-46.79,-23.79\n"
+        "uas-placeholder,2026-01-01T00:00:00Z,150,-46.694,-23.694\n",
         encoding="utf-8",
     )
     sites = tmp_path / "sites.csv"
@@ -102,6 +106,9 @@ def test_make_roi_is_deterministic_and_preserves_source_geometry(tmp_path: Path)
     first_report = json.loads((first / "roi_report.json").read_text(encoding="utf-8"))
     second_report = json.loads((second / "roi_report.json").read_text(encoding="utf-8"))
     assert first_report["created_utc"] != second_report["created_utc"]
+    assert first_report["flight_samples_total"] > 0
+    assert first_report["flight_samples_total"] == 2
+    assert second_report["flight_samples_total"] == 2
 
     source_geometry = json.loads(source.read_text(encoding="utf-8"))["features"][0]["geometry"]
     generated = json.loads((first / "roi.geojson").read_text(encoding="utf-8"))
