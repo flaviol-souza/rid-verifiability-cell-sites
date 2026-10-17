@@ -14,7 +14,8 @@
 !/data/external/roi/
 !/data/external/roi/**
 # Raw and un-anonymized source extracts remain private.
-/data/external/anatel/
+/data/external/anatel/*
+!/data/external/anatel/Estacoes_SMP_interlagos.csv
 /data/external/flights/*.csv
 !/data/external/flights/flights_anon.csv
 /data/external/flights/raw/

@@ -5,11 +5,10 @@
 The event RoI is the strict, unbuffered boundary of the Autódromo José Carlos Pace. It is independent of the flight observations and is used as a secondary event-area stratum and for the scenario figure. It is not used to filter the main flight sample set.
 
 - Source: OpenStreetMap relation `2560355`, `Autódromo José Carlos Pace`.
-- OSM geometry endpoint used for the saved polygon: Nominatim polygon export, accessed 2026-10-16.
-- Exact Nominatim URL: `https://nominatim.openstreetmap.org/search?format=geojson&polygon_geojson=1&q=Aut%C3%B3dromo%20Jos%C3%A9%20Carlos%20Pace%2C%20S%C3%A3o%20Paulo`.
-- Nominatim `polygon_threshold` was not supplied; according to the current API documentation its default is `0.0`, so no simplification tolerance was requested. The saved geometry was not simplified after retrieval.
-- Reproducible Overpass query recorded in `osm_autodromo.geojson`:
-  `[out:json];relation(2560355);out body;>;out body;`
+- OSM geometry endpoint used for the saved polygon: Nominatim object lookup, accessed 2026-10-16.
+- Exact URL: `https://nominatim.openstreetmap.org/lookup?osm_ids=R2560355&format=geojson&polygon_geojson=1`.
+- The saved source file itself confirms `osm_type=relation` and `osm_id=2560355`; the identifier-based URL fixes the object independently of a text search.
+- Nominatim `polygon_threshold` was not supplied; the documented default is `0.0`, and no post-download simplification was applied.
 - Buffer: `0 m`, fixed a priori because the RoI represents the event area strictly.
 - Licence: © OpenStreetMap contributors, Open Database License (ODbL) 1.0.
 - Generated area: `0.905 km2`.
@@ -24,9 +23,11 @@ The generated domain area is `4.685 km2`. It retains `90.86%` of the cleaned fli
 
 ## ANATEL extract provenance
 
-The input extract is `data/external/anatel/Estacoes_SMP_interlagos.csv`. It contains 1,124 station records. The file was supplied as the Interlagos-area ANATEL extract and was not spatially inferred from flight points. Its `Município-UF` column contains only `São Paulo - SP`; no additional municipality filter was applied. The 1,124 records collapse to 109 unique sites by the exact pair (`Latitude decimal`, `Longitude decimal`), as required by the one-sniffer-per-site rule.
+The input extract is `data/external/anatel/Estacoes_SMP_interlagos.csv`. It contains 1,124 station records. It was extracted from the Anatel open-data station records for Serviço Móvel Pessoal (SMP), restricted to `Município-UF == "São Paulo - SP"`; no flight-derived spatial filter was used. The extraction date is 2026-10-16. The official Anatel open-data policy describes these datasets as available under an open licence permitting reuse with attribution: https://www.gov.br/anatel/pt-br/dados/dados-abertos. The station-licensing context is documented at https://www.gov.br/anatel/pt-br/regulado/outorga/telefonia-movel/estacoes-radio-base.
 
-The domain computation uses all 1,124 records after coordinate parsing and deduplicates only for the site geometry. No operator, technology, frequency, or sector row is discarded before site deduplication. The query date and original ANATEL download request are not encoded in the CSV metadata and remain a provenance item to confirm with the data provider.
+Its `Município-UF` column contains only `São Paulo - SP`. The 1,124 records collapse to 109 unique sites by the exact pair (`Latitude decimal`, `Longitude decimal`), as required by the one-sniffer-per-site rule.
+
+The domain computation uses all 1,124 records after coordinate parsing and deduplicates only for the site geometry. No operator, technology, frequency, or sector row is discarded before site deduplication. The source CSV SHA-256 at this freeze is `311c85de3c187ebd2a35c48c99484011dbec784b10bf1a8a761444e02338da8e`.
 
 ## Generated artifacts
 

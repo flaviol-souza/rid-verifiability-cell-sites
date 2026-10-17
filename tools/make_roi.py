@@ -12,7 +12,10 @@ Usage:
      --sites data/external/anatel/Estacoes_SMP_interlagos.csv --rmax-m 1000 --out data/external/roi
 Requires: shapely>=2, pyproj, pandas, numpy.
 """
-import argparse, hashlib, json, datetime
+import argparse
+import datetime
+import hashlib
+import json
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -31,19 +34,36 @@ ap.add_argument("--out", default="data/external/roi")
 a = ap.parse_args()
 
 gj = json.loads(Path(a.input).read_text())
-geoms = [shape(f["geometry"]) for f in gj["features"]] if gj.get("type") == "FeatureCollection" else [shape(gj.get("geometry", gj))]
-roi = unary_union(geoms)
-assert roi.is_valid and roi.geom_type in ("Polygon", "MultiPolygon"), "invalid RoI geometry"
+features = gj["features"] if gj.get("type") == "FeatureCollection" else [{"properties": {}, "geometry": gj.get("geometry", gj)}]
+geoms = [shape(feature["geometry"]) for feature in features]
+roi_source = unary_union(geoms)
+assert roi_source.is_valid and roi_source.geom_type in ("Polygon", "MultiPolygon"), "invalid RoI geometry"
 
 # Local metric projection (SIRGAS 2000 / UTM 23S covers São Paulo)
 fwd = Transformer.from_crs("EPSG:4326", "EPSG:31983", always_xy=True).transform
 inv = Transformer.from_crs("EPSG:31983", "EPSG:4326", always_xy=True).transform
-roi_m = transform(fwd, roi)
+
+# Preserve the source coordinates when no metric buffer is requested. The UTM
+# projection remains responsible for areas, containment, and domain geometry.
+roi_m = transform(fwd, roi_source)
 if a.buffer_m:
     roi_m = roi_m.buffer(a.buffer_m)
-roi = transform(inv, roi_m)
+roi = roi_source if a.buffer_m == 0 else transform(inv, roi_m)
+source_properties = features[0].get("properties", {})
 cand_m = roi_m.buffer(a.rmax_m)
 
+
+def round_coordinates(value):
+    """Round nested GeoJSON coordinates to seven decimal places."""
+    if isinstance(value, (list, tuple)):
+        return [round_coordinates(item) for item in value]
+    return round(value, 7)
+
+
+def write_json(path: Path, payload: dict) -> None:
+    """Write stable JSON bytes for reproducible generated artifacts."""
+    text = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    path.write_text(text + "\n", encoding="utf-8")
 fp = pd.read_csv(a.flights, dtype={"flight_id": str})
 fp = fp[(fp.alt > 100) & (~fp.flight_id.isin(["1ZNBK5900C00A8", "MissionAlpha"]))].drop_duplicates(["flight_id", "timestamp"])
 xy = [Point(fwd(x, y)) for x, y in zip(fp.lon, fp.lat)]
@@ -80,14 +100,25 @@ report = {
     "created_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
 }
 out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
-geo = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"name": "RoI", **report}, "geometry": mapping(roi)}]}
-(out / "roi.geojson").write_text(json.dumps(geo, indent=1))
-dom = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"name": "analysis_domain",
-       "definition": f"bbox of unique ANATEL sites eroded by R_max={a.rmax_m} m (inventory complete within R_max)"},
-       "geometry": mapping(transform(inv, dom_m))}]}
-(out / "domain.geojson").write_text(json.dumps(dom, indent=1))
+geo_properties = {
+    "buffer_m": a.buffer_m,
+    "name": "RoI",
+    "osm_id": source_properties.get("osm_id"),
+    "osm_type": source_properties.get("osm_type"),
+    "source": a.source,
+}
+geo = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": geo_properties,
+       "geometry": {**mapping(roi), "coordinates": round_coordinates(mapping(roi)["coordinates"])}}]}
+write_json(out / "roi.geojson", geo)
+domain_geometry = mapping(transform(inv, dom_m))
+dom = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {
+       "definition": f"bbox of unique ANATEL sites eroded by R_max={a.rmax_m} m (inventory complete within R_max)",
+       "name": "analysis_domain",
+       "rmax_m": a.rmax_m,
+       }, "geometry": {**domain_geometry, "coordinates": round_coordinates(domain_geometry["coordinates"])}}]}
+write_json(out / "domain.geojson", dom)
 report["sha256_roi_geojson"] = hashlib.sha256((out / "roi.geojson").read_bytes()).hexdigest()
 report["sha256_domain_geojson"] = hashlib.sha256((out / "domain.geojson").read_bytes()).hexdigest()
-(out / "roi_report.json").write_text(json.dumps(report, indent=1, ensure_ascii=False))
+write_json(out / "roi_report.json", report)
 print(json.dumps(report, indent=1, ensure_ascii=False))
 print("\nFreeze: commit roi.geojson + domain.geojson + roi_report.json + the original input file; cite the source in data/external/roi/README.md.")
