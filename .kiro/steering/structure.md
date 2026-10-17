@@ -1,3 +1,6 @@
+---
+inclusion: always
+---
 # Remote ID observability from cellular infrastructure — Repository Structure and Golden Rules
 
 > **Where** each thing lives, and the rules that keep paper, code, data and literature consistent.

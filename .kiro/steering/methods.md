@@ -1,3 +1,7 @@
+---
+inclusion: fileMatch
+fileMatchPattern: ["src/**", "analysis/**", "experiments/**", "tests/**", "tools/**", "paper/**"]
+---
 # Remote ID observability from cellular infrastructure — Methods, Environment and Conventions
 
 > **How** the work is done: environment, pipeline, metrics, protocol, statistics, conventions and what counts as "verified".

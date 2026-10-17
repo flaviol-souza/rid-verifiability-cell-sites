@@ -1,3 +1,6 @@
+---
+inclusion: always
+---
 # Remote ID observability from cellular infrastructure — Research Summary (SBRC 2027)
 
 > **What** is being studied, **why**, with **which concepts**, and what is still owed.
