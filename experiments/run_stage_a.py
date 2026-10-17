@@ -40,7 +40,7 @@ def main() -> int:
             agl.DemCoverageError, stage_a.InputHashMismatch, FileNotFoundError) as e:
         print(f"PRECONDITION ERROR: {type(e).__name__}: {e}", file=sys.stderr)
         return 2
-    g0 = stage_a.g0_evaluate(res["samples"], res["log"], cfg, res["domain"])
+    g0 = stage_a.g0_evaluate(res["samples"], res["log"], cfg, res["domain"], res["diag"])
 
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = root / cfg["stage_a"]["paths"]["results_dir"] / stamp
@@ -53,7 +53,8 @@ def main() -> int:
     inputs = {k: stage_a.sha256(root / p[k]) for k in ("anatel", "dem", "roi", "domain")}
     outputs = {k: stage_a.sha256(root / v) for k, v in {
         "flights_anon": p["flights_anon"], "samples": f"{p['interim_dir']}/samples.parquet",
-        "sites": f"{p['interim_dir']}/sites.parquet", "cleaning_log": f"{p['interim_dir']}/cleaning_log.csv"}.items()}
+        "sites": f"{p['interim_dir']}/sites.parquet", "cleaning_log": f"{p['interim_dir']}/cleaning_log.csv",
+        "ground_refs": f"{p['interim_dir']}/ground_refs.parquet"}.items()}
     prov = {"created_utc": stamp, "git_commit": _git_commit(root), "config_file": args.config,
             "config": cfg, "inputs_sha256": inputs, "outputs_sha256": outputs,
             "pandas": pd.__version__, "python": sys.version.split()[0], "G0": g0["G0"], "failing": g0["failing"]}

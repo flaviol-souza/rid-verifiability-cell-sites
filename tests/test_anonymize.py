@@ -35,3 +35,23 @@ def test_no_raw_identifier_leaks_into_published_file(workspace):
     for serial in raw["flight_id"].unique():                # includes the literal 'encrypted'
         assert serial not in published
     assert "flight_id" not in published.splitlines()[0]
+
+
+def test_published_file_has_drone_positions_only(workspace):
+    from conftest import HOME_ALT, OPER_ALT
+    root, cfg = workspace
+    res = stage_a.run(cfg, root)
+    pub = pd.read_csv(root / cfg["stage_a"]["paths"]["flights_anon"])
+    assert list(pub.columns) == ["uas_id", "lon", "lat", "alt", "timestamp"]
+    assert not pub["alt"].isin([HOME_ALT, HOME_ALT + 0.5, OPER_ALT]).any()      # no pilot/home rows
+    assert not pub.duplicated(["uas_id", "timestamp"]).any()
+    refs = pd.read_parquet(root / cfg["stage_a"]["paths"]["interim_dir"] / "ground_refs.parquet")
+    assert set(refs["role"]) == {"pilot", "home", "ground_ref"}
+    assert "alt" not in refs.columns
+
+
+def test_publishing_other_roles_is_refused(workspace):
+    root, cfg = workspace
+    cfg["stage_a"]["publish_roles"] = ["drone", "pilot"]
+    with pytest.raises(ValueError):
+        stage_a.run(cfg, root)

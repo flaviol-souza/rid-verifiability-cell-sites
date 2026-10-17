@@ -1,12 +1,18 @@
-# Reference configuration — Stage A part (DS-v2). Every value with its source in research.md/methods.md.
+# Reference configuration — Stage A part. Rules version v2 (deviation log G0-v1 → v2 in methods.md).
 stage_a:
+  rules_version: v2
   hmac_key_env: DSV2_HMAC_KEY        # BM-6: name of the env var; the value is never stored
   pseudonym_prefix: "uas_"
   pseudonym_hex_chars: 12
   sentinel_min_alt_msl_m: 100.0      # C5
   session_gap_s: 60.0                # C6, BM-4
   min_agl_m: 5.0                     # C8
-  max_ground_speed_mps: 40.0         # C9
+  max_ground_speed_mps: 40.0         # C9 (threshold unchanged from v1)
+  c9_estimator: since_first_seen     # C9 v2: displacement / time since the previous position was first reported
+  c2_role_rule: first_row_is_drone   # C2 v2: 1st = drone, 2nd = pilot/ground ref, 3rd = home (audit N11)
+  agl_anchor_priority: [home, pilot, ground_ref]   # C7 v2 (audit N12); 'none' if the session has no ground ref
+  c3_extent: site_bbox               # C3 v2: bounding box of the unique ANATEL sites
+  publish_roles: [drone]             # pilot/home positions are personal data: never published
   anatel_sha256: "311c85de3c187ebd2a35c48c99484011dbec784b10bf1a8a761444e02338da8e"   # R2.2, data/external/anatel/README.md
   leak_test_ignore: ["encrypted", "MissionAlpha"]   # literal non-serial values of flight_id
   altitude_reference: "unconfirmed; assumed orthometric (EGM2008)"   # BM-27
@@ -23,3 +29,4 @@ g0:                                   # research.md, G0 — fixed before seeing 
   agl_p50_range_m: [10.0, 120.0]
   min_retained_agl_m: -5.0
   max_speed_excluded_frac: 0.01
+  min_role_consistency: 0.90         # v2: 1st position above the 2nd in ≥ 90% of messages (sanity of the role rule)
