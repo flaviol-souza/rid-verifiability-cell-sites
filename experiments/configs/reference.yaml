@@ -30,3 +30,15 @@ g0:                                   # research.md, G0 — fixed before seeing 
   min_retained_agl_m: -5.0
   max_speed_excluded_frac: 0.01
   min_role_consistency: 0.90         # v2: 1st position above the 2nd in ≥ 90% of messages (sanity of the role rule)
+
+stage_b:
+  channel: experiments/configs/channel/c1_generic.yaml
+  scenario: consortium
+  seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+  gamma_sweep_dbm: [-101, -99, -97, -95, -93, -91, -89]
+  k_levels: [1, 2, 3, 4]
+  verif_scale_m: [50.0, 100.0, 200.0]
+  verif_scale_ref_m: 100.0
+  paths:
+    observations_dir: data/raw/observations
+    results_dir: results/stage_b
