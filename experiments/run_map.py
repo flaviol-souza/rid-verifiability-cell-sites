@@ -36,6 +36,8 @@ def main() -> int:
     ap.add_argument("--scenario", default="consortium")
     ap.add_argument("--cell-m", type=float, default=100.0)
     ap.add_argument("--min-time-s", type=float, default=30.0, help="cells with less flight time are not drawn")
+    ap.add_argument("--margin-m", type=float, default=300.0, help="view = flight cells ± margin (same for every scenario)")
+    ap.add_argument("--full-extent", action="store_true", help="show the whole site inventory instead of the flight area")
     a = ap.parse_args()
     root = Path(a.root).resolve()
     cfg = yaml.safe_load((root / a.config).read_text())
@@ -75,7 +77,7 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     cells.to_csv(out / "cells.csv", index=False, lineterminator="\n")
 
-    fig, ax = plt.subplots(figsize=(4.4, 4.6))
+    fig, ax = plt.subplots(figsize=(4.4, 4.4))
     show = cells[cells["time_s"] >= a.min_time_s]
     cmap = LinearSegmentedColormap.from_list("blue", BLUE_RAMP)
     sc = ax.scatter(show["cell_x_m"], show["cell_y_m"], c=show[f"frac_V3_D{int(D)}"], cmap=cmap, vmin=0, vmax=1,
@@ -85,7 +87,16 @@ def main() -> int:
         ax.scatter(edge["cell_x_m"], edge["cell_y_m"], marker="s", s=(a.cell_m / 40) ** 2 * 4, facecolors="none",
                    edgecolors="#eb6834", linewidths=0.8, label=f"within R of inventory edge (possibly truncated)")
     sx, sy = local_xy_m(sites["lat"], sites["lon"], lat0, lon0)
-    ax.scatter(sx, sy, marker="^", s=12, color="#1f1f1e", label="cell site", zorder=3)
+    if a.full_extent:
+        n_out, lab = 0, "cell site"
+    else:
+        # view from ALL cells (not only drawn ones): identical for every scenario since the drone tracks are the same
+        x0, x1 = cells["cell_x_m"].min() - a.cell_m / 2 - a.margin_m, cells["cell_x_m"].max() + a.cell_m / 2 + a.margin_m
+        y0, y1 = cells["cell_y_m"].min() - a.cell_m / 2 - a.margin_m, cells["cell_y_m"].max() + a.cell_m / 2 + a.margin_m
+        ax.set_xlim(x0, x1); ax.set_ylim(y0, y1)
+        n_out = int((~((sx >= x0) & (sx <= x1) & (sy >= y0) & (sy <= y1))).sum())
+        lab = f"cell site ({n_out} outside view)" if n_out else "cell site"
+    ax.scatter(sx, sy, marker="^", s=12, color="#1f1f1e", label=lab, zorder=3, clip_on=True)
     roi_path = root / cfg["stage_a"]["paths"]["roi"]
     if roi_path.exists():
         gj = json.loads(roi_path.read_text())
@@ -93,7 +104,7 @@ def main() -> int:
         rings = geom["coordinates"] if geom["type"] == "Polygon" else [p[0] for p in geom["coordinates"]]
         for ring in rings[:1] if geom["type"] == "Polygon" else rings:
             rx, ry = local_xy_m([c[1] for c in ring], [c[0] for c in ring], lat0, lon0)
-            ax.plot(rx, ry, color="#5f5e58", linewidth=0.9, linestyle="--", label="event zone (RoI)")
+            ax.plot(rx, ry, color="#5f5e58", linewidth=0.9, linestyle="--", label="event zone (RoI)", scalex=False, scaley=False)
     cb = fig.colorbar(sc, ax=ax, fraction=0.046, pad=0.04)
     cb.set_label(f"fraction of time verifiable (V3, D = {int(D)} m)", fontsize=8)
     cb.ax.tick_params(labelsize=7)
@@ -103,7 +114,7 @@ def main() -> int:
     ax.tick_params(labelsize=7)
     h, l = ax.get_legend_handles_labels()
     fig.legend(h, l, fontsize=7, frameon=False, loc="lower center", ncol=1)   # below the axes, never over the data
-    fig.tight_layout(rect=(0, 0.04 + 0.04 * len(l), 1, 1))
+    fig.tight_layout(rect=(0, 0.02 + 0.035 * len(l), 1, 1))
     fig.savefig(out / f"fig_map_V3_{a.scenario}.pdf", metadata={"CreationDate": None, "ModDate": None})
     fig.savefig(out / f"fig_map_V3_{a.scenario}.png", dpi=200)
     print(f"{len(cells)} cells ({len(show)} drawn) -> {out.relative_to(root)}")

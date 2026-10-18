@@ -26,8 +26,9 @@ def kth_site_distance_m(sx, sy, x, y, k: int) -> np.ndarray:
 def bbox_edge_distance_m(sx, sy, x, y) -> np.ndarray:
     """Distance from each point to the edge of the site bounding box (> 0 inside, ≤ 0 outside).
 
-    The ANATEL extract covers at least this box, so a point farther than R from its edge cannot lose a site within R
-    to the inventory boundary: dist > R ⇒ untruncated at range R (conservative)."""
+    ASSUMPTION (not established by the extract's provenance): the inventory is complete inside this box. Only under
+    that assumption does dist > R imply that no site within R was lost to the inventory boundary. If the extract was
+    restricted by some other geometry, this flag can miss truncation; report it as "no evidence of edge truncation"."""
     x, y = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
     x0, x1, y0, y1 = np.min(sx), np.max(sx), np.min(sy), np.max(sy)
     return np.minimum.reduce([x - x0, x1 - x, y - y0, y1 - y])
@@ -60,3 +61,27 @@ def session_geometry(samples: pd.DataFrame, sites: pd.DataFrame, all_sites: pd.D
                      "frac_time_inventory_edge": float((g["edge"] * g["w"]).sum() / g["w"].sum()),
                      "time_s": float(g["w"].sum())})
     return pd.DataFrame(rows)
+
+
+def geometric_sigma_h(samples: pd.DataFrame, sites: pd.DataFrame, range_m: float, h_rx_m: float, eta: float,
+                      sigma_db: float) -> np.ndarray:
+    """Per sample: CRLB σ_h (known power) using every site whose 3D distance is within the implied range R, i.e. the
+    links heard on average, without shadowing. Returns (σ_h, number of such sites); σ_h is inf when fewer than 2 sites
+    or degenerate geometry.
+    Explains V3 from geometry alone; it is not a substitute for the simulated V3."""
+    from analysis import verifiability as vf
+    from drs.channel import observe
+    i, j, dx, dy, _dh, d3, _ = observe.candidate_pairs(samples, sites, range_m, h_rx_m)
+    keep = d3 <= range_m
+    obs = pd.DataFrame({"sample_id": samples["sample_id"].to_numpy()[i[keep]], "dx_m": dx[keep], "dy_m": dy[keep],
+                        "d3_m": d3[keep], "heard": True})
+    pb = vf.per_sample_bounds_fast(obs, eta, sigma_db).set_index("sample_id")
+    sid = samples["sample_id"]
+    return sid.map(pb["sigma_h_v3_m"]).fillna(np.inf).to_numpy(), sid.map(pb["n_obs"]).fillna(0).astype(int).to_numpy()
+
+
+def crlb_range_limit_m(scale_m: float, n_sites: int, eta: float, sigma_db: float) -> float:
+    """Largest common distance d at which n_sites in symmetric geometry still give σ_h ≤ scale_m:
+    σ_h = 2 d / (b √n), b = 10 η / (σ ln 10)  ⇒  d_max = scale · b · √n / 2."""
+    b = 10.0 * eta / (sigma_db * np.log(10.0))
+    return float(scale_m * b * np.sqrt(n_sites) / 2.0)

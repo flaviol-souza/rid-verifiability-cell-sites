@@ -63,6 +63,8 @@ def main() -> int:
         print("ERROR: stage_b.range_ref_m is not set", file=sys.stderr)
         return 2
     R, D = float(b["range_ref_m"]), int(b["verif_scale_ref_m"])
+    ch = yaml.safe_load((root / b["channel"]).read_text())
+    d_lim = geo.crlb_range_limit_m(D, 3, ch["eta"], ch["shadow_sigma_db"])   # symmetric 3-site limit for σ_h ≤ D
     interim = root / cfg["stage_a"]["paths"]["interim_dir"]
     samples = pd.read_parquet(interim / "samples.parquet").sort_values(["session_id", "t_utc"], kind="mergesort").reset_index(drop=True)
     all_sites = pd.read_parquet(interim / "sites.parquet")
@@ -76,6 +78,11 @@ def main() -> int:
         sites = all_sites if sc == "consortium" else \
             all_sites[all_sites["operator"].str.split("|").apply(lambda ops, s=sc: s in ops)]
         g = geo.session_geometry(samples, sites, all_sites, w, a.k, R)
+        sg, ng = geo.geometric_sigma_h(samples, sites, R, ch["sniffer_height_m"], ch["eta"], ch["shadow_sigma_db"])
+        ok = ((ng >= 3) & (sg <= D)).astype(float)
+        vgeo = pd.Series(ok * w.to_numpy()).groupby(samples["session_id"].to_numpy()).sum() \
+            / w.groupby(samples["session_id"].to_numpy()).sum().to_numpy()
+        g[f"{metric}_geo"] = g["session_id"].map(vgeo)
         v = sm[(sm["family"] == fam) & (sm["scenario"] == sc) & (sm["range_m"] == R) & (sm["metric"] == metric)]
         m = g.merge(v[["session_id", "value"]].rename(columns={"value": metric}), on="session_id", how="inner")
         m.insert(0, "scenario", sc)
@@ -83,11 +90,18 @@ def main() -> int:
         dcol = f"d{a.k}_median_m"
         rho, lo, hi = _spearman_ci(m, dcol, metric)
         near, far = m[m[dcol] <= R], m[m[dcol] > R]
+        rho_g, lo_g, hi_g = _spearman_ci(m, f"{metric}_geo", metric)
+        odd = m[(m[dcol] <= d_lim) & (m[metric] < 0.1)]                # close sites, yet (almost) never verifiable
         summ.append({"scenario": sc, "range_m": R, "metric": metric, "k": a.k, "n_sessions": len(m),
                      "spearman_rho": rho, "rho_ci_lo": lo, "rho_ci_hi": hi,
                      "n_near": len(near), f"mean_{metric}_near": near[metric].mean() if len(near) else np.nan,
                      "n_far": len(far), f"mean_{metric}_far": far[metric].mean() if len(far) else np.nan,
-                     "sessions_mostly_edge": int((m["frac_time_inventory_edge"] > 0.5).sum())})
+                     "sessions_mostly_edge": int((m["frac_time_inventory_edge"] > 0.5).sum()),
+                     "d_limit_3sites_m": d_lim,
+                     f"spearman_rho_{metric}_vs_geo": rho_g, "rho_geo_ci_lo": lo_g, "rho_geo_ci_hi": hi_g,
+                     f"mean_abs_{metric}_minus_geo": float((m[metric] - m[f"{metric}_geo"]).abs().mean()),
+                     "n_close_but_unverifiable": len(odd),
+                     f"mean_{metric}_geo_close_but_unverifiable": odd[f"{metric}_geo"].mean() if len(odd) else np.nan})
     sess = pd.concat(rows, ignore_index=True)
     out = root / a.out
     out.mkdir(parents=True, exist_ok=True)
@@ -102,17 +116,18 @@ def main() -> int:
         inner, edge = d[d["frac_time_inventory_edge"] <= 0.5], d[d["frac_time_inventory_edge"] > 0.5]
         ax.scatter(inner[dcol], inner[metric], s=14, color=SERIES[i], marker=MARKERS[i], alpha=0.8,
                    linewidths=0, label="session")
-        ax.scatter(edge[dcol], edge[metric], s=18, facecolors="none", edgecolors=INK_2, marker=MARKERS[i],
-                   linewidths=0.8, label="session, mostly near inventory edge")
+        if len(edge):
+            ax.scatter(edge[dcol], edge[metric], s=18, facecolors="none", edgecolors=INK_2, marker=MARKERS[i],
+                       linewidths=0.8, label="session, mostly near inventory edge")
         ax.axvline(R, color=INK_2, linewidth=0.8, linestyle="--", label=f"R = {int(R)} m")
+        ax.axvline(d_lim, color=INK_2, linewidth=0.8, linestyle=":",
+                   label=f"3-site CRLB limit for D = {D} m ({d_lim:.0f} m)")
         ax.set_xscale("log")
         ax.set_xticks([t for t in (25, 50, 100, 200, 500, 1000, 2000, 5000)])
         ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}"))
         ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
         ax.set_ylim(-0.03, 1.03)
         ax.set_title(sc, fontsize=9, color=INK)
-        ax.set_xlabel(f"median distance to {a.k}rd nearest site (m)" if a.k == 3 else
-                      f"median distance to site #{a.k} (m)", color=INK, fontsize=8)
         if i == 0:
             ax.set_ylabel(f"V3 (D = {D} m), fraction of time", color=INK, fontsize=8)
         ax.tick_params(colors=INK_2, labelsize=7)
@@ -121,9 +136,15 @@ def main() -> int:
             ax.spines[s_].set_visible(False)
     dmin, dmax = sess[dcol].replace(np.inf, np.nan).min(), sess[dcol].replace(np.inf, np.nan).max()
     axes[0][0].set_xlim(min(dmin, R) / 1.3, max(dmax, R) * 1.3)
-    h, l = axes[0][0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=3, fontsize=7, frameon=False)
-    fig.tight_layout(rect=(0, 0.1, 1, 1))
+    seen, hh, ll = set(), [], []
+    for ax in axes[0]:
+        for hi, li in zip(*ax.get_legend_handles_labels()):
+            if li not in seen and li != "session":
+                seen.add(li); hh.append(hi); ll.append(li)
+    fig.tight_layout(rect=(0, 0.16, 1, 1))
+    fig.text(0.5, 0.105, f"median distance to {a.k}rd nearest site of the scenario (m)" if a.k == 3 else
+             f"median distance to site #{a.k} of the scenario (m)", color=INK, fontsize=8, ha="center")
+    fig.legend(hh, ll, loc="lower center", ncol=len(ll), fontsize=7, frameon=False)
     fig.savefig(out / "fig_mechanism.pdf", metadata={"CreationDate": None, "ModDate": None})
     fig.savefig(out / "fig_mechanism.png", dpi=200)
     plt.close(fig)

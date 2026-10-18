@@ -49,3 +49,39 @@ def test_mechanism_runner(tmp_path):
     p = s.pivot(index="session_id", columns="scenario", values="d3_median_m")
     assert (p["consortium"] <= p["A"] + 1e-9).all()
     assert (root / "results/mech/fig_mechanism.pdf").exists()
+
+
+def test_crlb_range_limit_matches_symmetric_geometry():
+    from analysis import verifiability as vf
+    eta, sig, D = 2.2, 6.0, 100.0
+    d = geo.crlb_range_limit_m(D, 3, eta, sig)
+    ang = np.radians([90.0, 210.0, 330.0])
+    dxy = np.c_[d * np.cos(ang), d * np.sin(ang)]
+    assert vf.crlb_h_m(dxy, np.full(3, d), eta, sig) == pytest.approx(D, rel=1e-9)
+    assert d == pytest.approx(137.9, abs=0.1)
+
+
+def test_geometric_sigma_uses_only_sites_within_range():
+    smp = pd.DataFrame({"sample_id": [0], "lat": [-23.70], "lon": [-46.70], "agl_m": [30.0]})
+    m = 1 / 111_195.0
+    sites = pd.DataFrame({"lat": [-23.70 + 100 * m, -23.70 - 50 * m, -23.70 - 50 * m, -23.70 + 900 * m],
+                          "lon": [-46.70, -46.70 + 87 * m / np.cos(np.radians(23.7)),
+                                  -46.70 - 87 * m / np.cos(np.radians(23.7)), -46.70]})
+    s, n = geo.geometric_sigma_h(smp, sites, 200.0, 30.0, 2.2, 6.0)
+    assert n[0] == 3 and np.isfinite(s[0]) and s[0] < 100.0
+    s2, n2 = geo.geometric_sigma_h(smp, sites.iloc[:2], 200.0, 30.0, 2.2, 6.0)
+    assert n2[0] == 2
+
+
+def test_mechanism_summary_has_geometric_columns_and_map_modes(tmp_path):
+    root = _workspace(tmp_path, range_ref=150)
+    assert _run("run_blocks.py", root, "--out", "results/blockO", "--seeds", "0-0").returncode == 0
+    r = _run("run_mechanism.py", root, "--blocks", "results/blockO", "--out", "results/mech", "--scenarios", "consortium")
+    assert r.returncode == 0, r.stderr
+    summ = pd.read_csv(root / "results/mech/mechanism_summary.csv")
+    assert {"d_limit_3sites_m", "spearman_rho_V3_D100_vs_geo", "n_close_but_unverifiable"} <= set(summ.columns)
+    sess = pd.read_csv(root / "results/mech/mechanism_sessions.csv")
+    assert sess["V3_D100_geo"].between(0, 1).all()
+    for extra in ([], ["--full-extent"]):
+        r = _run("run_map.py", root, "--out", "results/m", "--seeds", "0-0", "--min-time-s", "0", *extra)
+        assert r.returncode == 0, r.stderr
