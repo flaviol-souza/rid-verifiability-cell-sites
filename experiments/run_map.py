@@ -17,6 +17,7 @@ import yaml  # noqa: E402
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from analysis import geometry as geo  # noqa: E402
 from analysis import observability as ob  # noqa: E402
 from analysis import spatial  # noqa: E402
 from analysis import verifiability as vf  # noqa: E402
@@ -46,10 +47,12 @@ def main() -> int:
     ch["sniffer_sens_dbm"] = pathloss.gamma_for_range_dbm(float(b["range_ref_m"]), ch)
     interim = root / cfg["stage_a"]["paths"]["interim_dir"]
     samples = pd.read_parquet(interim / "samples.parquet").sort_values(["session_id", "t_utc"], kind="mergesort").reset_index(drop=True)
-    sites = pd.read_parquet(interim / "sites.parquet")
+    all_sites = pd.read_parquet(interim / "sites.parquet")
+    sites = all_sites
     if a.scenario != "consortium":
-        sites = sites[sites["operator"].str.split("|").apply(lambda ops: a.scenario in ops)]
-    lat0, lon0 = float(sites["lat"].mean()), float(sites["lon"].mean())
+        sites = all_sites[all_sites["operator"].str.split("|").apply(lambda ops: a.scenario in ops)]
+    lat0, lon0 = geo.common_origin(all_sites)          # same frame for every scenario → maps comparable cell by cell
+    R = float(b["range_ref_m"])
     w = ob.time_weights_s(samples, cfg["stage_a"]["session_gap_s"])
     D = float(b["verif_scale_ref_m"])
     lo, hi = (int(v) for v in a.seeds.split("-"))
@@ -64,15 +67,23 @@ def main() -> int:
         acc_v3 += (n >= 3) & (s3 <= D)
     flags = {"observable_k1": acc_obs / len(seeds), f"V3_D{int(D)}": acc_v3 / len(seeds)}
     cells = spatial.grid_cells(samples, flags, w, lat0, lon0, a.cell_m)
+    ax_, ay_ = local_xy_m(all_sites["lat"], all_sites["lon"], lat0, lon0)
+    # a cell is 'inventory edge' if any part of it is within R of the site bounding box edge (possibly truncated)
+    cells["inventory_edge"] = geo.bbox_edge_distance_m(ax_, ay_, cells["cell_x_m"], cells["cell_y_m"]) \
+        < R + a.cell_m / np.sqrt(2)
     out = root / a.out
     out.mkdir(parents=True, exist_ok=True)
     cells.to_csv(out / "cells.csv", index=False, lineterminator="\n")
 
-    fig, ax = plt.subplots(figsize=(4.4, 4.0))
+    fig, ax = plt.subplots(figsize=(4.4, 4.6))
     show = cells[cells["time_s"] >= a.min_time_s]
     cmap = LinearSegmentedColormap.from_list("blue", BLUE_RAMP)
     sc = ax.scatter(show["cell_x_m"], show["cell_y_m"], c=show[f"frac_V3_D{int(D)}"], cmap=cmap, vmin=0, vmax=1,
                     marker="s", s=(a.cell_m / 40) ** 2 * 4, linewidths=0)
+    edge = show[show["inventory_edge"]]
+    if len(edge):
+        ax.scatter(edge["cell_x_m"], edge["cell_y_m"], marker="s", s=(a.cell_m / 40) ** 2 * 4, facecolors="none",
+                   edgecolors="#eb6834", linewidths=0.8, label=f"within R of inventory edge (possibly truncated)")
     sx, sy = local_xy_m(sites["lat"], sites["lon"], lat0, lon0)
     ax.scatter(sx, sy, marker="^", s=12, color="#1f1f1e", label="cell site", zorder=3)
     roi_path = root / cfg["stage_a"]["paths"]["roi"]
@@ -85,12 +96,14 @@ def main() -> int:
             ax.plot(rx, ry, color="#5f5e58", linewidth=0.9, linestyle="--", label="event zone (RoI)")
     cb = fig.colorbar(sc, ax=ax, fraction=0.046, pad=0.04)
     cb.set_label(f"fraction of time verifiable (V3, D = {int(D)} m)", fontsize=8)
+    cb.ax.tick_params(labelsize=7)
     ax.set_aspect("equal")
     ax.set_xlabel("x (m)", fontsize=8); ax.set_ylabel("y (m)", fontsize=8)
-    ax.set_title(f"{a.scenario}, R = {int(float(b['range_ref_m']))} m", fontsize=9)
+    ax.set_title(f"{a.scenario}, R = {int(R)} m", fontsize=9)
     ax.tick_params(labelsize=7)
-    ax.legend(fontsize=7, frameon=False, loc="lower left")
-    fig.tight_layout()
+    h, l = ax.get_legend_handles_labels()
+    fig.legend(h, l, fontsize=7, frameon=False, loc="lower center", ncol=1)   # below the axes, never over the data
+    fig.tight_layout(rect=(0, 0.04 + 0.04 * len(l), 1, 1))
     fig.savefig(out / f"fig_map_V3_{a.scenario}.pdf", metadata={"CreationDate": None, "ModDate": None})
     fig.savefig(out / f"fig_map_V3_{a.scenario}.png", dpi=200)
     print(f"{len(cells)} cells ({len(show)} drawn) -> {out.relative_to(root)}")

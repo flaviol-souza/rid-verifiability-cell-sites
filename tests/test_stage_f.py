@@ -1,0 +1,51 @@
+"""Stage F: common map frame across scenarios, inventory-edge flag, geometric mechanism of verifiability."""
+import numpy as np
+import pandas as pd
+import pytest
+
+from analysis import geometry as geo
+from test_stage_c import _run, _workspace
+
+
+def test_kth_site_distance_closed_form():
+    sx, sy = [0.0, 100.0, 0.0, 300.0], [0.0, 0.0, 200.0, 0.0]
+    d = geo.kth_site_distance_m(sx, sy, [0.0], [0.0], 3)
+    assert d[0] == pytest.approx(200.0)
+    assert np.isinf(geo.kth_site_distance_m(sx[:2], sy[:2], [0.0], [0.0], 3)[0])
+
+
+def test_bbox_edge_distance_sign():
+    sx, sy = [0.0, 1000.0], [0.0, 1000.0]
+    d = geo.bbox_edge_distance_m(sx, sy, [500.0, 100.0, -50.0], [500.0, 500.0, 500.0])
+    assert list(d) == [500.0, 100.0, -50.0]
+
+
+def test_weighted_median():
+    assert geo.weighted_median([1.0, 2.0, 10.0], [1.0, 1.0, 5.0]) == 10.0
+    assert geo.weighted_median([3.0, 1.0, 2.0], [1.0, 1.0, 1.0]) == 2.0
+
+
+def test_map_frame_is_common_across_scenarios(tmp_path):
+    root = _workspace(tmp_path, range_ref=150)
+    for sc, out in (("consortium", "results/map"), ("A", "results/map_A")):
+        r = _run("run_map.py", root, "--out", out, "--seeds", "0-0", "--min-time-s", "0", "--scenario", sc)
+        assert r.returncode == 0, r.stderr
+    c = pd.read_csv(root / "results/map/cells.csv")
+    a = pd.read_csv(root / "results/map_A/cells.csv")
+    assert c[["ix", "iy", "time_s"]].equals(a[["ix", "iy", "time_s"]])      # same grid, same time per cell
+    assert "inventory_edge" in c.columns and c["inventory_edge"].dtype == bool
+
+
+def test_mechanism_runner(tmp_path):
+    root = _workspace(tmp_path, range_ref=150)
+    assert _run("run_blocks.py", root, "--out", "results/blockO", "--seeds", "0-1").returncode == 0
+    r = _run("run_mechanism.py", root, "--blocks", "results/blockO", "--out", "results/mech", "--scenarios", "consortium,A")
+    assert r.returncode == 0, r.stderr
+    s = pd.read_csv(root / "results/mech/mechanism_sessions.csv")
+    assert not ({"lat", "lon"} & set(s.columns))
+    assert set(s["scenario"]) == {"consortium", "A"} and s["session_id"].nunique() == 2
+    assert (s["d3_median_m"] > 0).all() and s["frac_time_inventory_edge"].between(0, 1).all()
+    # consortium has a superset of sites → its 3rd-nearest site is never farther than operator A's
+    p = s.pivot(index="session_id", columns="scenario", values="d3_median_m")
+    assert (p["consortium"] <= p["A"] + 1e-9).all()
+    assert (root / "results/mech/fig_mechanism.pdf").exists()
