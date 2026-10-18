@@ -102,9 +102,47 @@ def test_map_writes_inventory_margin_and_mechanism_geo_figure(tmp_path):
     r = _run("run_map.py", root, "--out", "results/m", "--seeds", "0-0", "--min-time-s", "0")
     assert r.returncode == 0, r.stderr
     m = json.loads((root / "results/m/inventory_margin.json").read_text())
-    assert {"min_sample_distance_to_site_hull_m", "time_share_within_R_of_hull"} <= set(m)
+    assert {"min_sample_distance_to_site_hull_m", "time_share_within_R_of_inventory_edge",
+            "max_untruncated_range_if_r_max_raised_m"} <= set(m) and m["basis"] == "site_hull"
+    # with a documented cut polygon in the config, the margin is measured against it
+    import yaml
+    cut = {"type": "Polygon", "coordinates": [[[-46.72, -23.72], [-46.68, -23.72], [-46.68, -23.66], [-46.72, -23.66],
+                                               [-46.72, -23.72]]]}
+    (root / "data/external/anatel").mkdir(parents=True, exist_ok=True)
+    (root / "data/external/anatel/cut_polygon.geojson").write_text(json.dumps(cut))
+    cfgp = root / "experiments/configs/reference.yaml"
+    cfg = yaml.safe_load(cfgp.read_text()); cfg["stage_a"]["paths"]["anatel_cut"] = "data/external/anatel/cut_polygon.geojson"
+    cfgp.write_text(yaml.safe_dump(cfg))
+    assert _run("run_map.py", root, "--out", "results/m2", "--seeds", "0-0", "--min-time-s", "0").returncode == 0
+    m2 = json.loads((root / "results/m2/inventory_margin.json").read_text())
+    assert m2["basis"] == "cut_polygon" and m2["min_sample_distance_to_inventory_edge_m"] > 1500
+    assert "inventory_margin_m" in pd.read_csv(root / "results/m2/cells.csv").columns
     assert "hull_margin_m" in pd.read_csv(root / "results/m/cells.csv").columns
     assert _run("run_blocks.py", root, "--out", "results/blockO", "--seeds", "0-0").returncode == 0
     assert _run("run_mechanism.py", root, "--blocks", "results/blockO", "--out", "results/mech",
                 "--scenarios", "consortium,A").returncode == 0
     assert (root / "results/mech/fig_geo_vs_sim.pdf").exists()
+
+
+def test_polygon_edge_distance_matches_closed_form():
+    px, py = [0.0, 1000.0, 1000.0, 0.0], [0.0, 0.0, 800.0, 800.0]
+    d = geo.polygon_edge_distance_m(px, py, [500.0, 100.0, -50.0, 500.0], [400.0, 400.0, 400.0, 900.0])
+    assert d == pytest.approx([400.0, 100.0, -50.0, -100.0])
+    # closed ring gives the same answer
+    assert geo.polygon_edge_distance_m(px + [0.0], py + [0.0], [500.0], [400.0])[0] == pytest.approx(400.0)
+
+
+def test_inventory_edge_uses_cut_polygon_and_rejects_inconsistent_cut(tmp_path):
+    import json
+    sites = pd.DataFrame({"lat": [-23.70, -23.71, -23.69], "lon": [-46.70, -46.69, -46.69]})
+    ring = np.array([[-46.72, -23.72], [-46.68, -23.72], [-46.68, -23.68], [-46.72, -23.68], [-46.72, -23.72]])
+    p = tmp_path / "cut.geojson"
+    p.write_text(json.dumps({"type": "Polygon", "coordinates": [ring.tolist()]}))
+    r = geo.load_cut_ring(p)
+    d, basis = geo.inventory_edge_distance_m(sites, [0.0], [0.0], -23.70, -46.70, r)
+    assert basis == "cut_polygon" and d[0] > 1500
+    assert geo.inventory_edge_distance_m(sites, [0.0], [0.0], -23.70, -46.70, None)[1] == "site_hull"
+    bad = ring.copy(); bad[1:3, 0] = -46.695                       # cut too narrow: a site falls outside
+    with pytest.raises(ValueError):
+        geo.inventory_edge_distance_m(sites, [0.0], [0.0], -23.70, -46.70, bad)
+    assert geo.load_cut_ring(tmp_path / "missing.geojson") is None

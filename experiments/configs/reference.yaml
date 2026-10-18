@@ -20,6 +20,7 @@ stage_a:
     flights_raw: data/external/flights/raw/utm_points_with_flightid.csv
     flights_anon: data/external/flights/flights_anon.csv
     anatel: data/external/anatel/Estacoes_SMP_interlagos.csv
+    anatel_cut: data/external/anatel/cut_polygon.geojson
     dem: data/external/terrain/glo30_interlagos_crop.tif
     roi: data/external/roi/roi.geojson
     domain: data/external/roi/domain.geojson

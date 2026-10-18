@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "ANATEL extract spatial cut (Interlagos)",
+        "source": "hand-drawn by the first author; vertices recovered 2026-10-18",
+        "check": "all 109 unique sites of Estacoes_SMP_interlagos.csv lie inside (min margin ~300 m)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-46.714968, -23.717539],
+          [-46.666307, -23.717539],
+          [-46.666307, -23.676161],
+          [-46.714968, -23.676161],
+          [-46.714968, -23.717539]
+        ]]
+      }
+    }
+  ]
+}

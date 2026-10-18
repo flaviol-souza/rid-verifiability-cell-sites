@@ -47,6 +47,48 @@ def hull_edge_distance_m(sx, sy, x, y) -> np.ndarray:
     return -(q @ eq[:, :2].T + eq[:, 2]).max(axis=1)
 
 
+def load_cut_ring(path):
+    """Exterior ring (lon, lat) of the polygon used to cut the ANATEL extract, or None if the file is absent."""
+    import json
+    from pathlib import Path
+    p = Path(path) if path else None
+    if p is None or not p.exists():
+        return None
+    gj = json.loads(p.read_text())
+    geom = gj["features"][0]["geometry"] if "features" in gj else gj.get("geometry", gj)
+    if geom["type"] != "Polygon":
+        raise ValueError("inventory cut must be a single Polygon")
+    return np.asarray(geom["coordinates"][0], dtype=float)
+
+
+def polygon_edge_distance_m(px, py, x, y) -> np.ndarray:
+    """Signed distance from points to a simple polygon boundary (> 0 inside, < 0 outside); ring may be open or closed."""
+    px, py = np.asarray(px, dtype=float), np.asarray(py, dtype=float)
+    if px[0] == px[-1] and py[0] == py[-1]:
+        px, py = px[:-1], py[:-1]
+    x, y = np.asarray(x, dtype=float)[:, None], np.asarray(y, dtype=float)[:, None]
+    ax, ay, bx, by = px[None, :], py[None, :], np.roll(px, -1)[None, :], np.roll(py, -1)[None, :]
+    ex, ey = bx - ax, by - ay
+    t = np.clip(((x - ax) * ex + (y - ay) * ey) / (ex * ex + ey * ey), 0.0, 1.0)
+    dist = np.hypot(x - (ax + t * ex), y - (ay + t * ey)).min(axis=1)
+    crosses = ((ay > y) != (by > y)) & (x < ax + (y - ay) * ex / np.where(ey == 0, np.inf, ey))
+    inside = crosses.sum(axis=1) % 2 == 1
+    return np.where(inside, dist, -dist)
+
+
+def inventory_edge_distance_m(all_sites: pd.DataFrame, x, y, lat0: float, lon0: float, cut_ring=None):
+    """Distance from points to the inventory edge: the documented cut polygon when available (exact), otherwise the
+    convex hull of the sites (conservative if the cut is convex). Returns (distance, basis). Raises if any site lies
+    outside the cut polygon, since that would contradict the extract's provenance."""
+    ax_, ay_ = local_xy_m(all_sites["lat"], all_sites["lon"], lat0, lon0)
+    if cut_ring is None:
+        return hull_edge_distance_m(ax_, ay_, x, y), "site_hull"
+    rx, ry = local_xy_m(cut_ring[:, 1], cut_ring[:, 0], lat0, lon0)
+    if (polygon_edge_distance_m(rx, ry, ax_, ay_) < 0).any():
+        raise ValueError("some ANATEL sites lie outside the documented cut polygon: check the polygon")
+    return polygon_edge_distance_m(rx, ry, x, y), "cut_polygon"
+
+
 def weighted_median(v, w) -> float:
     v, w = np.asarray(v, dtype=float), np.asarray(w, dtype=float)
     if len(v) == 0:
@@ -57,15 +99,14 @@ def weighted_median(v, w) -> float:
 
 
 def session_geometry(samples: pd.DataFrame, sites: pd.DataFrame, all_sites: pd.DataFrame, w: pd.Series,
-                     k: int, range_m: float) -> pd.DataFrame:
+                     k: int, range_m: float, cut_ring=None) -> pd.DataFrame:
     """Per session: time-weighted median distance to the k-th nearest site of `sites`, and the fraction of flight time
     within range_m of the inventory edge (where the extract may hide sites)."""
     lat0, lon0 = common_origin(all_sites)
     x, y = local_xy_m(samples["lat"], samples["lon"], lat0, lon0)
     sx, sy = local_xy_m(sites["lat"], sites["lon"], lat0, lon0)
-    ax_, ay_ = local_xy_m(all_sites["lat"], all_sites["lon"], lat0, lon0)
     dk = kth_site_distance_m(sx, sy, x, y, k)
-    edge = hull_edge_distance_m(ax_, ay_, x, y) < range_m
+    edge = inventory_edge_distance_m(all_sites, x, y, lat0, lon0, cut_ring)[0] < range_m
     df = pd.DataFrame({"session_id": samples["session_id"].to_numpy(), "uas_id": samples["uas_id"].to_numpy(),
                        "dk": dk, "edge": edge.astype(float), "w": w.to_numpy()})
     rows = []

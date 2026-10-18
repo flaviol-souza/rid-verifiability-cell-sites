@@ -91,6 +91,8 @@ def main() -> int:
     interim = root / cfg["stage_a"]["paths"]["interim_dir"]
     samples = pd.read_parquet(interim / "samples.parquet").sort_values(["session_id", "t_utc"], kind="mergesort").reset_index(drop=True)
     all_sites = pd.read_parquet(interim / "sites.parquet")
+    cut_ring = geo.load_cut_ring(root / cfg["stage_a"]["paths"]["anatel_cut"]) \
+        if cfg["stage_a"]["paths"].get("anatel_cut") else None
     w = ob.time_weights_s(samples, cfg["stage_a"]["session_gap_s"])
     sm = hy.session_means(pd.read_parquet(root / a.blocks / "session_metrics.parquet"))
     fam = a.family or sorted(sm["family"].unique())[0]
@@ -100,7 +102,7 @@ def main() -> int:
     for sc in a.scenarios.split(","):
         sites = all_sites if sc == "consortium" else \
             all_sites[all_sites["operator"].str.split("|").apply(lambda ops, s=sc: s in ops)]
-        g = geo.session_geometry(samples, sites, all_sites, w, a.k, R)
+        g = geo.session_geometry(samples, sites, all_sites, w, a.k, R, cut_ring)
         sg, ng = geo.geometric_sigma_h(samples, sites, R, ch["sniffer_height_m"], ch["eta"], ch["shadow_sigma_db"])
         ok = ((ng >= 3) & (sg <= D)).astype(float)
         vgeo = pd.Series(ok * w.to_numpy()).groupby(samples["session_id"].to_numpy()).sum() \
