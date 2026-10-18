@@ -54,3 +54,22 @@ def test_block_variants_and_summary_figures(tmp_path):
     assert hashlib.sha256((figs / "fig_verifiability_gap_c1_generic.pdf").read_bytes()).hexdigest() == h1
     summ = pd.read_csv(root / "results/blockO/summary/summary.csv")
     assert not ({"lat", "lon"} & set(summ.columns))
+
+
+def test_grid_cells_time_weighting():
+    from analysis import spatial
+    smp = pd.DataFrame({"lat": [-23.70, -23.70, -23.70 + 0.01], "lon": [-46.70, -46.70, -46.70]})
+    w = pd.Series([1.0, 3.0, 2.0])
+    cells = spatial.grid_cells(smp, {"V3": np.array([1.0, 0.0, 1.0])}, w, -23.70, -46.70, 100.0)
+    assert cells["time_s"].sum() == pytest.approx(6.0)
+    first = cells.sort_values("time_s").iloc[-1]
+    assert first["time_s"] == 4.0 and first["frac_V3"] == pytest.approx(0.25)
+
+
+def test_map_runner(tmp_path):
+    root = _workspace(tmp_path, range_ref=150)
+    r = _run("run_map.py", root, "--out", "results/map", "--seeds", "0-1", "--min-time-s", "0")
+    assert r.returncode == 0, r.stderr
+    cells = pd.read_csv(root / "results/map/cells.csv")
+    assert cells["frac_V3_D100"].between(0, 1).all() and (cells["frac_observable_k1"] >= cells["frac_V3_D100"]).all()
+    assert (root / "results/map/fig_map_V3_consortium.pdf").exists()

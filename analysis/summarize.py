@@ -11,8 +11,13 @@ def summary_table(tbl: pd.DataFrame, seed: int = 0) -> pd.DataFrame:
     rows = []
     for (fam, sc, R, metric), g in sm.groupby(["family", "scenario", "range_m", "metric"], sort=True):
         est, lo, hi = stats.cluster_bootstrap_ci(g["value"], g["uas_id"], seed=seed)
+        per_serial = g.groupby("uas_id")["value"].mean()                  # every drone weighs the same
+        s_est, s_lo, s_hi = stats.cluster_bootstrap_ci(per_serial, per_serial.index, seed=seed)
+        top = g["uas_id"].value_counts(normalize=True).iloc[0]
         rows.append({"family": fam, "scenario": sc, "range_m": R, "metric": metric, "n_sessions": len(g),
-                     "n_serials": g["uas_id"].nunique(), "mean": est, "ci_lo": lo, "ci_hi": hi})
+                     "n_serials": g["uas_id"].nunique(), "mean": est, "ci_lo": lo, "ci_hi": hi,
+                     "serial_weighted_mean": s_est, "serial_ci_lo": s_lo, "serial_ci_hi": s_hi,
+                     "top_serial_session_share": round(float(top), 4)})
     return pd.DataFrame(rows)
 
 

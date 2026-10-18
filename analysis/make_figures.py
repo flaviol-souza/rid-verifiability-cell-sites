@@ -23,7 +23,7 @@ def _range_axis(ax, ranges):
     """Log axis with ticks at the swept ranges, plus room on the right for direct labels."""
     r = sorted(set(float(v) for v in ranges))
     ax.set_xscale("log")
-    ax.set_xlim(r[0] * 0.85, r[-1] * 1.9)
+    ax.set_xlim(r[0] * 0.42, r[-1] * 1.15)
     ax.set_xticks(r)
     # label every tick except those too close to a neighbour on a log axis (e.g. 750 next to 1000)
     labels = [f"{int(v)}" if i == len(r) - 1 or r[i + 1] / v > 1.4 else "" for i, v in enumerate(r)]
@@ -33,7 +33,11 @@ def _range_axis(ax, ranges):
 
 def _legend_below(fig, ax, ncol):
     h, l = ax.get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=ncol, fontsize=7, frameon=False)
+    seen, hh, ll = set(), [], []
+    for hi, li in zip(h, l):
+        if li not in seen:
+            seen.add(li); hh.append(hi); ll.append(li)
+    fig.legend(hh, ll, loc="lower center", ncol=min(ncol + 1, len(ll)), fontsize=7, frameon=False)
 
 
 def _style(ax, xlabel, ylabel):
@@ -49,12 +53,11 @@ def _style(ax, xlabel, ylabel):
 
 
 def _shade_truncated(ax, truncated_ranges):
+    """Shade the truncated ranges; the explanation goes into the legend (a patch handle), never over the data."""
     if len(truncated_ranges):
         lo = min(truncated_ranges)
-        ax.axvspan(lo * 0.93, ax.get_xlim()[1], color=SHADE, zorder=0)
+        ax.axvspan(lo * 0.93, ax.get_xlim()[1], color=SHADE, zorder=0, label="lower bound (site inventory truncated)")
         ax.set_xlim(right=ax.get_xlim()[1])
-        ax.text(lo * 0.97, 0.97, "lower bound\n(inventory truncation)", fontsize=7, color=INK_2, va="top",
-                transform=ax.get_xaxis_transform())
 
 
 def _entity_order(scenarios):
@@ -65,7 +68,21 @@ def _entity_order(scenarios):
 def _line(ax, x, y, lo, hi, i, label):
     ax.fill_between(x, lo, hi, color=SERIES[i], alpha=0.15, linewidth=0)
     ax.plot(x, y, color=SERIES[i], marker=MARKERS[i], markersize=4.5, linewidth=1.5, linestyle=LINESTYLES[i], label=label)
-    ax.annotate(label, (x[-1], y[-1]), xytext=(4, 0), textcoords="offset points", fontsize=7, color=INK, va="center")
+    ax._direct_labels = getattr(ax, "_direct_labels", []) + [(x[0], y[0], label)]
+
+
+def _place_direct_labels(ax, min_gap=0.07):
+    """Write the left-end labels, nudging them apart vertically (in axis fraction) so they never overlap."""
+    items = sorted(getattr(ax, "_direct_labels", []), key=lambda t: t[1])
+    if not items:
+        return
+    y0, y1 = ax.get_ylim()
+    pos = [(v - y0) / (y1 - y0) for _, v, _ in items]
+    for i in range(1, len(pos)):
+        pos[i] = max(pos[i], pos[i - 1] + min_gap)
+    for (x, _, label), py in zip(items, pos):
+        ax.annotate(label, (x, py), xycoords=("data", "axes fraction"), xytext=(-6, 0), textcoords="offset points",
+                    fontsize=7, color=INK, va="center", ha="right")
 
 
 def fig_observability(summary: pd.DataFrame, truncated: list, out: Path, family: str, ks=(1, 3)) -> Path:
@@ -99,7 +116,8 @@ def fig_verifiability_gap(summary: pd.DataFrame, truncated: list, out: Path, fam
     _style(ax, "implied range R (m)", "fraction of flight time")
     _shade_truncated(ax, truncated)
     fig.tight_layout(rect=(0, 0.1, 1, 1))
-    _legend_below(fig, ax, 3)
+    fig.tight_layout(rect=(0, 0.16, 1, 1))
+    _legend_below(fig, ax, 1)
     return _save(fig, out, f"fig_verifiability_gap_{family}")
 
 
@@ -116,11 +134,14 @@ def fig_shadow_reduction(h1: pd.DataFrame, truncated: list, out: Path, family: s
     _style(ax, "implied range R (m)", "shadow-time reduction")
     _shade_truncated(ax, truncated)
     fig.tight_layout(rect=(0, 0.1, 1, 1))
+    fig.tight_layout(rect=(0, 0.12, 1, 1))
     _legend_below(fig, ax, 2)
     return _save(fig, out, f"fig_shadow_reduction_{family}")
 
 
 def _save(fig, out: Path, name: str) -> Path:
+    for ax in fig.axes:
+        _place_direct_labels(ax)
     out.mkdir(parents=True, exist_ok=True)
     pdf = out / f"{name}.pdf"
     fig.savefig(pdf, metadata={"CreationDate": None, "ModDate": None})   # reproducible PDF bytes
