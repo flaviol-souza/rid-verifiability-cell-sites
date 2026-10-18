@@ -60,8 +60,9 @@ def _shade_truncated(ax, truncated_ranges):
         ax.set_xlim(right=ax.get_xlim()[1])
 
 
-def _entity_order(scenarios):
-    ops = sorted(s for s in scenarios if s != "consortium")
+def _entity_order(scenarios, alias=None):
+    from analysis.alias import label
+    ops = sorted((s for s in scenarios if s != "consortium"), key=lambda s: label(s, alias or {}))
     return ["consortium"] + ops
 
 
@@ -85,15 +86,17 @@ def _place_direct_labels(ax, min_gap=0.07):
                     fontsize=7, color=INK, va="center", ha="right")
 
 
-def fig_observability(summary: pd.DataFrame, truncated: list, out: Path, family: str, ks=(1, 3)) -> Path:
+def fig_observability(summary: pd.DataFrame, truncated: list, out: Path, family: str, ks=(1, 3), alias=None) -> Path:
     """Observable fraction (|S| ≥ k) vs implied range, one panel per k, one line per scenario."""
     fig, axes = plt.subplots(1, len(ks), figsize=(WIDTH_IN, 2.5), sharey=True)
     s = summary[summary["family"] == family]
     for ax, k in zip(axes, ks):
         d = s[s["metric"] == f"observable_k{k}"]
-        for i, sc in enumerate(_entity_order(d["scenario"].unique())):
+        from analysis.alias import label
+        for i, sc in enumerate(_entity_order(d["scenario"].unique(), alias)):
             g = d[d["scenario"] == sc].sort_values("range_m")
-            _line(ax, g["range_m"].to_numpy(), g["mean"].to_numpy(), g["ci_lo"].to_numpy(), g["ci_hi"].to_numpy(), i, sc)
+            _line(ax, g["range_m"].to_numpy(), g["mean"].to_numpy(), g["ci_lo"].to_numpy(), g["ci_hi"].to_numpy(), i,
+                  label(sc, alias or {}))
         _range_axis(ax, d["range_m"])
         ax.set_title(f"|S| ≥ {k}", fontsize=9, color=INK)
         _style(ax, "implied range R (m)", "fraction of flight time" if k == ks[0] else "")

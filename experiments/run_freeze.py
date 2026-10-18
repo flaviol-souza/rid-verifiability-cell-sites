@@ -20,6 +20,8 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 SECTIONS = ["Observability", "Verifiability", "Serial heterogeneity", "H1 cooperation", "H2 gap", "H2 robustness",
             "H3 ranking", "Mechanism (exploratory)", "Inventory and truncation"]
 
@@ -51,6 +53,10 @@ class Freezer:
             fmt = str(value)
         self.rows.append({"section": section, "key": key, "value": value, "formatted": fmt,
                           "source": self._src(path), "selector": selector})
+        if kind == "frac":                                   # every fraction also as a rounded percentage
+            self.rows.append({"section": section, "key": key + "_pct", "value": value,
+                              "formatted": f"{100 * float(value):.0f}\\%", "source": self._src(path),
+                              "selector": selector + " [x100]"})
 
 
 def _one(df, path, **sel):
@@ -76,9 +82,14 @@ def main() -> int:
     ap.add_argument("--map", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--family", default="c1_generic")
+    ap.add_argument("--map-scenario", action="append", default=[], help="scenario=map_dir, repeatable")
+    ap.add_argument("--allow-raw-names", action="store_true", help="internal use only: keep operator names in keys")
     a = ap.parse_args()
     root = Path(a.root).resolve()
-    b = yaml.safe_load((root / a.config).read_text())["stage_b"]
+    cfg = yaml.safe_load((root / a.config).read_text())
+    b = cfg["stage_b"]
+    from analysis.alias import check, key as akey, load_alias
+    alias = load_alias(cfg)
     Rref, D = float(b["range_ref_m"]), int(b["verif_scale_ref_m"])
     fz = Freezer(root)
     fam = a.family
@@ -90,18 +101,24 @@ def main() -> int:
     ops = sorted(x for x in s.loc[s["family"] == fam, "scenario"].unique() if x != "consortium")
     main_ranges = sorted(float(r) for r in s.loc[s["family"] == fam, "range_m"].unique() if r <= Rref)   # quoted ranges
     scen = ["consortium"] + ops
+    if not alias and not a.allow_raw_names:
+        raise SystemExit("operators must be de-identified: set presentation.operator_alias in the config "
+                         "(or pass --allow-raw-names for internal use)")
+    if not a.allow_raw_names and not set(ops).issubset(alias):
+        raise SystemExit("operators must be de-identified: presentation.operator_alias does not cover all raw operator names")
+    check(alias, ops)
     for R in main_ranges:
         r = int(R)
         for sc in scen:
             for k in (1, 3):
                 sel = dict(family=fam, scenario=sc, range_m=R, metric=f"observable_k{k}")
                 row = _one(s, sp, **sel)
-                fz.add("Observability", f"obs_k{k}_{sc}_R{r}", row["mean"], sp, _sel(**sel))
+                fz.add("Observability", f"obs_k{k}_{akey(sc, alias)}_R{r}", row["mean"], sp, _sel(**sel))
         for sc in scen:
             for lvl in (3, 4):
                 sel = dict(family=fam, scenario=sc, range_m=R, metric=f"V{lvl}_D{D}")
                 row = _one(s, sp, **sel)
-                fz.add("Verifiability", f"V{lvl}_D{D}_{sc}_R{r}", row["mean"], sp, _sel(**sel))
+                fz.add("Verifiability", f"V{lvl}_D{D}_{akey(sc, alias)}_R{r}", row["mean"], sp, _sel(**sel))
                 if sc == "consortium":
                     fz.add("Verifiability", f"V{lvl}_D{D}_{sc}_R{r}_cilo", row["ci_lo"], sp, _sel(**sel) + " [ci_lo]")
                     fz.add("Verifiability", f"V{lvl}_D{D}_{sc}_R{r}_cihi", row["ci_hi"], sp, _sel(**sel) + " [ci_hi]")
@@ -114,7 +131,7 @@ def main() -> int:
     fz.add("Serial heterogeneity", "n_serials", row["n_serials"], sp, "any row [n_serials]", "int")
     for op in ops:
         t = s[(s["family"] == fam) & (s["scenario"] == op) & (s["metric"] == f"V3_D{D}")]
-        fz.add("Verifiability", f"V3_D{D}_{op}_maxR", t["mean"].max(), sp, f"max over range_m of {op} V3_D{D}")
+        fz.add("Verifiability", f"V3_D{D}_{akey(op, alias)}_maxR", t["mean"].max(), sp, f"max over range_m of {op} V3_D{D}")
 
     # --- hypotheses
     hp = blk / "hypotheses"
@@ -155,15 +172,39 @@ def main() -> int:
     m = pd.read_csv(mp)
     for sc in [x for x in m["scenario"] if pd.notna(_one(m, mp, scenario=x)["spearman_rho"])]:
         row = _one(m, mp, scenario=sc)
-        fz.add("Mechanism (exploratory)", f"mech_rho_d3_{sc}", row["spearman_rho"], mp, f"scenario={sc} [spearman_rho]", "rho")
-        fz.add("Mechanism (exploratory)", f"mech_rho_geo_{sc}", row[f"spearman_rho_V3_D{D}_vs_geo"], mp,
+        k_ = akey(sc, alias)
+        fz.add("Mechanism (exploratory)", f"mech_rho_d3_{k_}", row["spearman_rho"], mp, f"scenario={sc} [spearman_rho]", "rho")
+        fz.add("Mechanism (exploratory)", f"mech_rho_geo_{k_}", row[f"spearman_rho_V3_D{D}_vs_geo"], mp,
                f"scenario={sc} [spearman_rho_V3_D{D}_vs_geo]", "rho")
-        fz.add("Mechanism (exploratory)", f"mech_mae_geo_{sc}", row[f"mean_abs_V3_D{D}_minus_geo"], mp,
+        fz.add("Mechanism (exploratory)", f"mech_mae_geo_{k_}", row[f"mean_abs_V3_D{D}_minus_geo"], mp,
                f"scenario={sc} [mean_abs_V3_D{D}_minus_geo]")
+    sp2 = root / a.mechanism / "mechanism_sessions.csv"
+    if sp2.exists():
+        ms = pd.read_csv(sp2)
+        for sc in ["consortium"] + ops:
+            g = ms[ms["scenario"] == sc]
+            if len(g):
+                dlt = g[f"V3_D{D}"] - g[f"V3_D{D}_geo"]
+                fz.add("Mechanism (exploratory)", f"mech_sim_above_geo_{akey(sc, alias)}", int((dlt > 0.2).sum()), sp2,
+                       f"scenario={sc}: sessions with V3 - V3_geo > 0.2", "int")
+                fz.add("Mechanism (exploratory)", f"mech_geo_above_sim_{akey(sc, alias)}", int((dlt < -0.2).sum()), sp2,
+                       f"scenario={sc}: sessions with V3_geo - V3 > 0.2", "int")
     row = _one(m, mp, scenario="consortium")
     fz.add("Mechanism (exploratory)", "mech_close_unverifiable", row["n_close_but_unverifiable"], mp,
            "scenario=consortium [n_close_but_unverifiable]", "int")
     fz.add("Mechanism (exploratory)", "mech_dlimit3", row["d_limit_3sites_m"], mp, "d_limit_3sites_m", "m")
+
+    # --- maps: share of flight time in cells that are (almost) never verifiable
+    for spec in a.map_scenario:
+        sc, d = spec.split("=", 1)
+        cp = root / d / "cells.csv"
+        c = pd.read_csv(cp)
+        col = f"frac_V3_D{D}"
+        fz.add("Mechanism (exploratory)", f"map_blind_share_{akey(sc, alias)}",
+               float(c.loc[c[col] < 0.1, "time_s"].sum() / c["time_s"].sum()), cp,
+               f"time share in cells with {col} < 0.1", "pct")
+        fz.add("Mechanism (exploratory)", f"map_v3_pooled_{akey(sc, alias)}",
+               float((c[col] * c["time_s"]).sum() / c["time_s"].sum()), cp, f"time-weighted {col} (pooled over sessions)")
 
     # --- inventory margin
     jp = root / a.map / "inventory_margin.json"

@@ -47,3 +47,6 @@ stage_b:
   range_grid_m: [100, 200, 300, 500, 750, 1000]
   range_ref_m: 200
   h2_min_effect: 0.10
+
+presentation:
+  operator_alias: {VIVO: A, CLARO: B, TIM: C}

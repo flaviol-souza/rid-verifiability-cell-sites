@@ -55,6 +55,10 @@ def main() -> int:
         sites = all_sites[all_sites["operator"].str.split("|").apply(lambda ops: a.scenario in ops)]
     lat0, lon0 = geo.common_origin(all_sites)          # same frame for every scenario → maps comparable cell by cell
     R = float(b["range_ref_m"])
+    from analysis.alias import check, key as akey, label as alabel, load_alias
+    alias = load_alias(cfg)
+    check(alias, [o for ops in all_sites["operator"].str.split("|") for o in ops])
+    tag = akey(a.scenario, alias)
     w = ob.time_weights_s(samples, cfg["stage_a"]["session_gap_s"])
     D = float(b["verif_scale_ref_m"])
     lo, hi = (int(v) for v in a.seeds.split("-"))
@@ -129,13 +133,13 @@ def main() -> int:
     cb.ax.tick_params(labelsize=7)
     ax.set_aspect("equal")
     ax.set_xlabel("x (m)", fontsize=8); ax.set_ylabel("y (m)", fontsize=8)
-    ax.set_title(f"{a.scenario}, R = {int(R)} m", fontsize=9)
+    ax.set_title(f"{alabel(a.scenario, alias)}, R = {int(R)} m", fontsize=9)
     ax.tick_params(labelsize=7)
     h, l = ax.get_legend_handles_labels()
     fig.legend(h, l, fontsize=7, frameon=False, loc="lower center", ncol=1)   # below the axes, never over the data
     fig.tight_layout(rect=(0, 0.02 + 0.035 * len(l), 1, 1))
-    fig.savefig(out / f"fig_map_V3_{a.scenario}.pdf", metadata={"CreationDate": None, "ModDate": None})
-    fig.savefig(out / f"fig_map_V3_{a.scenario}.png", dpi=200)
+    fig.savefig(out / f"fig_map_V3_{tag}.pdf", metadata={"CreationDate": None, "ModDate": None})
+    fig.savefig(out / f"fig_map_V3_{tag}.png", dpi=200)
     print(f"{len(cells)} cells ({len(show)} drawn) -> {out.relative_to(root)}")
     return 0
 

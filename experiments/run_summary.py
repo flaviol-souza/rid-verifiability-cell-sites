@@ -21,9 +21,13 @@ def main() -> int:
     ap.add_argument("--blocks", required=True)
     a = ap.parse_args()
     root = Path(a.root).resolve()
-    b = yaml.safe_load((root / a.config).read_text())["stage_b"]
+    cfg = yaml.safe_load((root / a.config).read_text())
+    b = cfg["stage_b"]
+    from analysis.alias import check, load_alias
+    alias = load_alias(cfg)
     blk = root / a.blocks
     tbl = pd.read_parquet(blk / "session_metrics.parquet")
+    check(alias, tbl["scenario"].unique())
     man = pd.read_csv(blk / "manifest.csv")
     out = blk / "summary"; out.mkdir(exist_ok=True)
     summ = summarize.summary_table(tbl)
@@ -31,7 +35,7 @@ def main() -> int:
     figs = blk / "figures"
     for fam in sorted(tbl["family"].unique()):
         trunc = sorted(man.loc[(man["family"] == fam) & man["truncated"], "range_m"].unique())
-        mf.fig_observability(summ, trunc, figs, fam)
+        mf.fig_observability(summ, trunc, figs, fam, alias=alias)
         mf.fig_verifiability_gap(summ, trunc, figs, fam, b["verif_scale_ref_m"])
         h1p = blk / "hypotheses" / "h1.csv"
         if h1p.exists():

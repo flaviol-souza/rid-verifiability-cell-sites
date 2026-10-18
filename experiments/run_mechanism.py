@@ -46,14 +46,15 @@ def _spearman_ci(df, xcol, ycol, seed=0, n_boot=2000):
     return rho, float(lo), float(hi)
 
 
-def _fig_geo_vs_sim(sess, scen, metric, D, R, out):
+def _fig_geo_vs_sim(sess, scen, metric, D, R, out, alias=None):
+    from analysis.alias import label as alabel
     """Simulated V3 (with shadowing) against the geometric prediction (mean-heard links, no shadowing)."""
     fig, ax = plt.subplots(figsize=(3.5, 3.7))
     ax.plot([0, 1], [0, 1], color=INK_2, linewidth=0.8, linestyle="--", label="y = x")
     for i, sc in enumerate(scen):
         d = sess[sess["scenario"] == sc]
         ax.scatter(d[f"{metric}_geo"], d[metric], s=14, color=SERIES[i % 4], marker=MARKERS[i % 4], alpha=0.75,
-                   linewidths=0, label=sc)
+                   linewidths=0, label=alabel(sc, alias))
     ax.set_xlim(-0.03, 1.03); ax.set_ylim(-0.03, 1.03); ax.set_aspect("equal")
     ax.set_xlabel(f"geometric V3 (links within R = {int(R)} m, no shadowing)", color=INK, fontsize=8)
     ax.set_ylabel(f"simulated V3 (D = {D} m)", color=INK, fontsize=8)
@@ -86,11 +87,14 @@ def main() -> int:
         print("ERROR: stage_b.range_ref_m is not set", file=sys.stderr)
         return 2
     R, D = float(b["range_ref_m"]), int(b["verif_scale_ref_m"])
+    from analysis.alias import check, label as alabel, load_alias
+    alias = load_alias(cfg)
     ch = yaml.safe_load((root / b["channel"]).read_text())
     d_lim = geo.crlb_range_limit_m(D, 3, ch["eta"], ch["shadow_sigma_db"])   # symmetric 3-site limit for σ_h ≤ D
     interim = root / cfg["stage_a"]["paths"]["interim_dir"]
     samples = pd.read_parquet(interim / "samples.parquet").sort_values(["session_id", "t_utc"], kind="mergesort").reset_index(drop=True)
     all_sites = pd.read_parquet(interim / "sites.parquet")
+    check(alias, [o for ops in all_sites["operator"].str.split("|") for o in ops])
     cut_ring = geo.load_cut_ring(root / cfg["stage_a"]["paths"]["anatel_cut"]) \
         if cfg["stage_a"]["paths"].get("anatel_cut") else None
     w = ob.time_weights_s(samples, cfg["stage_a"]["session_gap_s"])
@@ -152,7 +156,7 @@ def main() -> int:
         ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}"))
         ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
         ax.set_ylim(-0.03, 1.03)
-        ax.set_title(sc, fontsize=9, color=INK)
+        ax.set_title(alabel(sc, alias), fontsize=9, color=INK)
         if i == 0:
             ax.set_ylabel(f"V3 (D = {D} m), fraction of time", color=INK, fontsize=8)
         ax.tick_params(colors=INK_2, labelsize=7)
@@ -173,7 +177,7 @@ def main() -> int:
     fig.savefig(out / "fig_mechanism.pdf", metadata={"CreationDate": None, "ModDate": None})
     fig.savefig(out / "fig_mechanism.png", dpi=200)
     plt.close(fig)
-    _fig_geo_vs_sim(sess, scen, metric, D, R, out)
+    _fig_geo_vs_sim(sess, scen, metric, D, R, out, alias)
     print(pd.DataFrame(summ).to_string(index=False))
     return 0
 

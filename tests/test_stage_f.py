@@ -159,14 +159,24 @@ def test_freeze_numbers_are_sourced_and_reproducible(tmp_path):
     assert _run("run_mechanism.py", root, "--blocks", "results/blockO", "--out", "results/mech",
                 "--scenarios", "consortium,A,B").returncode == 0
     assert _run("run_map.py", root, "--out", "results/map", "--seeds", "0-0", "--min-time-s", "0").returncode == 0
-    args = ("--blockO", "results/blockO", "--mechanism", "results/mech", "--map", "results/map", "--out", "results/freeze",
+    import yaml
+    cfgp = root / "experiments/configs/reference.yaml"
+    cfg = yaml.safe_load(cfgp.read_text())
+    r0 = _run("run_freeze.py", root, "--blockO", "results/blockO", "--mechanism", "results/mech", "--map", "results/map",
+              "--out", "results/freeze0")
+    assert r0.returncode != 0 and "de-identified" in r0.stderr
+    cfg["presentation"] = {"operator_alias": {"A": "A", "B": "B"}}
+    cfgp.write_text(yaml.safe_dump(cfg))
+    args = ("--map-scenario", "consortium=results/map",
+            "--blockO", "results/blockO", "--mechanism", "results/mech", "--map", "results/map", "--out", "results/freeze",
             "--family", "c1_generic", "--blockS", "s1=results/S1")
     r = _run("run_freeze.py", root, *args)
     assert r.returncode == 0, r.stderr
     n = pd.read_csv(root / "results/freeze/numbers.csv")
     assert n["key"].is_unique and n["source"].notna().all() and len(n) > 40
-    assert {"obs_k1_consortium_R150", "h2_V3_mean_gap", "h2S_s1_gap",
-            "inv_min_sample_distance_to_inventory_edge_m"} <= set(n["key"])
+    assert {"obs_k1_consortium_R150", "obs_k1_opA_R150", "h2_V3_mean_gap", "h2S_s1_gap", "map_blind_share_consortium",
+            "mech_sim_above_geo_consortium", "inv_min_sample_distance_to_inventory_edge_m"} <= set(n["key"])
+    assert not n["key"].str.contains(r"_A_|_B_").any()
     tex = (root / "results/freeze/numbers.tex").read_text()
     assert "\\csname ds@h2_V3_mean_gap\\endcsname" in tex
     h = hashlib.sha256(tex.encode()).hexdigest()
