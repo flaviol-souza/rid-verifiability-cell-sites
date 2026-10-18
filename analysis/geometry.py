@@ -34,6 +34,19 @@ def bbox_edge_distance_m(sx, sy, x, y) -> np.ndarray:
     return np.minimum.reduce([x - x0, x1 - x, y - y0, y1 - y])
 
 
+def hull_edge_distance_m(sx, sy, x, y) -> np.ndarray:
+    """Distance from each point to the boundary of the convex hull of the sites (> 0 inside, < 0 outside).
+
+    The extract was cut by a hand-drawn lat/lon polygon that contains every site. If that polygon is convex it contains
+    the hull, so dist > R ⇒ no site within R can lie outside the cut (conservative). This is the inventory-edge test used
+    by the analysis; the bounding box (bbox_edge_distance_m) over-states coverage at its empty corners."""
+    from scipy.spatial import ConvexHull
+    P = np.c_[np.asarray(sx, dtype=float), np.asarray(sy, dtype=float)]
+    eq = ConvexHull(P).equations                       # n·p + b ≤ 0 inside, |n| = 1
+    q = np.c_[np.asarray(x, dtype=float), np.asarray(y, dtype=float)]
+    return -(q @ eq[:, :2].T + eq[:, 2]).max(axis=1)
+
+
 def weighted_median(v, w) -> float:
     v, w = np.asarray(v, dtype=float), np.asarray(w, dtype=float)
     if len(v) == 0:
@@ -52,7 +65,7 @@ def session_geometry(samples: pd.DataFrame, sites: pd.DataFrame, all_sites: pd.D
     sx, sy = local_xy_m(sites["lat"], sites["lon"], lat0, lon0)
     ax_, ay_ = local_xy_m(all_sites["lat"], all_sites["lon"], lat0, lon0)
     dk = kth_site_distance_m(sx, sy, x, y, k)
-    edge = bbox_edge_distance_m(ax_, ay_, x, y) < range_m
+    edge = hull_edge_distance_m(ax_, ay_, x, y) < range_m
     df = pd.DataFrame({"session_id": samples["session_id"].to_numpy(), "uas_id": samples["uas_id"].to_numpy(),
                        "dk": dk, "edge": edge.astype(float), "w": w.to_numpy()})
     rows = []

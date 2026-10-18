@@ -46,6 +46,29 @@ def _spearman_ci(df, xcol, ycol, seed=0, n_boot=2000):
     return rho, float(lo), float(hi)
 
 
+def _fig_geo_vs_sim(sess, scen, metric, D, R, out):
+    """Simulated V3 (with shadowing) against the geometric prediction (mean-heard links, no shadowing)."""
+    fig, ax = plt.subplots(figsize=(3.5, 3.7))
+    ax.plot([0, 1], [0, 1], color=INK_2, linewidth=0.8, linestyle="--", label="y = x")
+    for i, sc in enumerate(scen):
+        d = sess[sess["scenario"] == sc]
+        ax.scatter(d[f"{metric}_geo"], d[metric], s=14, color=SERIES[i % 4], marker=MARKERS[i % 4], alpha=0.75,
+                   linewidths=0, label=sc)
+    ax.set_xlim(-0.03, 1.03); ax.set_ylim(-0.03, 1.03); ax.set_aspect("equal")
+    ax.set_xlabel(f"geometric V3 (links within R = {int(R)} m, no shadowing)", color=INK, fontsize=8)
+    ax.set_ylabel(f"simulated V3 (D = {D} m)", color=INK, fontsize=8)
+    ax.tick_params(colors=INK_2, labelsize=7)
+    ax.grid(True, color=GRID, linewidth=0.6); ax.set_axisbelow(True)
+    for s_ in ("top", "right"):
+        ax.spines[s_].set_visible(False)
+    h, l = ax.get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=3, fontsize=7, frameon=False)
+    fig.tight_layout(rect=(0, 0.12, 1, 1))
+    fig.savefig(out / "fig_geo_vs_sim.pdf", metadata={"CreationDate": None, "ModDate": None})
+    fig.savefig(out / "fig_geo_vs_sim.png", dpi=200)
+    plt.close(fig)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="experiments/configs/reference.yaml")
@@ -148,6 +171,7 @@ def main() -> int:
     fig.savefig(out / "fig_mechanism.pdf", metadata={"CreationDate": None, "ModDate": None})
     fig.savefig(out / "fig_mechanism.png", dpi=200)
     plt.close(fig)
+    _fig_geo_vs_sim(sess, scen, metric, D, R, out)
     print(pd.DataFrame(summ).to_string(index=False))
     return 0
 

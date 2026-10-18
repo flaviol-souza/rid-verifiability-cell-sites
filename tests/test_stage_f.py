@@ -85,3 +85,26 @@ def test_mechanism_summary_has_geometric_columns_and_map_modes(tmp_path):
     for extra in ([], ["--full-extent"]):
         r = _run("run_map.py", root, "--out", "results/m", "--seeds", "0-0", "--min-time-s", "0", *extra)
         assert r.returncode == 0, r.stderr
+
+
+def test_hull_edge_distance():
+    sx, sy = [0.0, 1000.0, 0.0, 1000.0, 500.0], [0.0, 0.0, 1000.0, 1000.0, 500.0]
+    d = geo.hull_edge_distance_m(sx, sy, [500.0, 100.0, -50.0], [500.0, 500.0, 500.0])
+    assert d == pytest.approx([500.0, 100.0, -50.0])
+    # triangle: bbox corner (900, 900) is outside the hull although inside the bbox
+    tx, ty = [0.0, 1000.0, 0.0], [0.0, 0.0, 1000.0]
+    assert geo.hull_edge_distance_m(tx, ty, [900.0], [900.0])[0] < 0 < geo.bbox_edge_distance_m(tx, ty, [900.0], [900.0])[0]
+
+
+def test_map_writes_inventory_margin_and_mechanism_geo_figure(tmp_path):
+    import json
+    root = _workspace(tmp_path, range_ref=150)
+    r = _run("run_map.py", root, "--out", "results/m", "--seeds", "0-0", "--min-time-s", "0")
+    assert r.returncode == 0, r.stderr
+    m = json.loads((root / "results/m/inventory_margin.json").read_text())
+    assert {"min_sample_distance_to_site_hull_m", "time_share_within_R_of_hull"} <= set(m)
+    assert "hull_margin_m" in pd.read_csv(root / "results/m/cells.csv").columns
+    assert _run("run_blocks.py", root, "--out", "results/blockO", "--seeds", "0-0").returncode == 0
+    assert _run("run_mechanism.py", root, "--blocks", "results/blockO", "--out", "results/mech",
+                "--scenarios", "consortium,A").returncode == 0
+    assert (root / "results/mech/fig_geo_vs_sim.pdf").exists()

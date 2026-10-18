@@ -70,9 +70,16 @@ def main() -> int:
     flags = {"observable_k1": acc_obs / len(seeds), f"V3_D{int(D)}": acc_v3 / len(seeds)}
     cells = spatial.grid_cells(samples, flags, w, lat0, lon0, a.cell_m)
     ax_, ay_ = local_xy_m(all_sites["lat"], all_sites["lon"], lat0, lon0)
-    # a cell is 'inventory edge' if any part of it is within R of the site bounding box edge (possibly truncated)
-    cells["inventory_edge"] = geo.bbox_edge_distance_m(ax_, ay_, cells["cell_x_m"], cells["cell_y_m"]) \
-        < R + a.cell_m / np.sqrt(2)
+    # a cell is 'inventory edge' if any part of it is within R of the boundary of the site convex hull (possibly truncated)
+    cells["hull_margin_m"] = geo.hull_edge_distance_m(ax_, ay_, cells["cell_x_m"], cells["cell_y_m"]) - a.cell_m / np.sqrt(2)
+    cells["inventory_edge"] = cells["hull_margin_m"] < R
+    sxs, sys_ = local_xy_m(samples["lat"], samples["lon"], lat0, lon0)
+    margin = geo.hull_edge_distance_m(ax_, ay_, sxs, sys_)
+    (root / a.out).mkdir(parents=True, exist_ok=True)
+    (root / a.out / "inventory_margin.json").write_text(json.dumps(
+        {"min_sample_distance_to_site_hull_m": round(float(margin.min()), 1),
+         "p05_sample_distance_to_site_hull_m": round(float(np.percentile(margin, 5)), 1),
+         "time_share_within_R_of_hull": round(float(w[margin < R].sum() / w.sum()), 4), "range_m": R}, indent=2) + "\n")
     out = root / a.out
     out.mkdir(parents=True, exist_ok=True)
     cells.to_csv(out / "cells.csv", index=False, lineterminator="\n")
@@ -85,7 +92,7 @@ def main() -> int:
     edge = show[show["inventory_edge"]]
     if len(edge):
         ax.scatter(edge["cell_x_m"], edge["cell_y_m"], marker="s", s=(a.cell_m / 40) ** 2 * 4, facecolors="none",
-                   edgecolors="#eb6834", linewidths=0.8, label=f"within R of inventory edge (possibly truncated)")
+                   edgecolors="#eb6834", linewidths=0.8, label="within R of site-hull edge (possibly truncated)")
     sx, sy = local_xy_m(sites["lat"], sites["lon"], lat0, lon0)
     if a.full_extent:
         n_out, lab = 0, "cell site"
