@@ -177,6 +177,9 @@ def test_freeze_numbers_are_sourced_and_reproducible(tmp_path):
     assert {"obs_k1_consortium_R150", "obs_k1_opA_R150", "h2_V3_mean_gap", "h2S_s1_gap", "map_blind_share_consortium",
             "mech_sim_above_geo_consortium", "inv_min_sample_distance_to_inventory_edge_m"} <= set(n["key"])
     assert not n["key"].str.contains(r"_A_|_B_").any()
+    pubmd = (root / "results/freeze/results_freeze_public.md").read_text()
+    assert "scenario=Operator A" in pubmd and "scenario=A," not in pubmd
+    assert (root / "results/freeze/numbers_public.csv").exists()
     tex = (root / "results/freeze/numbers.tex").read_text()
     assert "\\csname ds@h2_V3_mean_gap\\endcsname" in tex
     h = hashlib.sha256(tex.encode()).hexdigest()

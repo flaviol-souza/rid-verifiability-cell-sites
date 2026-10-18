@@ -56,7 +56,7 @@ def main() -> int:
     lat0, lon0 = geo.common_origin(all_sites)          # same frame for every scenario → maps comparable cell by cell
     R = float(b["range_ref_m"])
     from analysis.alias import check, key as akey, label as alabel, load_alias
-    alias = load_alias(cfg)
+    alias = load_alias(cfg, root)
     check(alias, [o for ops in all_sites["operator"].str.split("|") for o in ops])
     tag = akey(a.scenario, alias)
     w = ob.time_weights_s(samples, cfg["stage_a"]["session_gap_s"])

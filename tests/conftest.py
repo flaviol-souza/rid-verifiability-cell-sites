@@ -86,7 +86,7 @@ def workspace(tmp_path, monkeypatch):
         "Número Estação": ["1", "2", "3", "4"],
         "Latitude decimal": [str(LAT0), str(LAT0), str(LAT0 + 0.01), "-23.80"],
         "Longitude decimal": [str(LON0), str(LON0), str(LON0 + 0.01), "-46.80"],   # last one outside RoI and domain
-        "Empresa Estação": ["CLARO", "CLARO", "VIVO", "TIM"],
+        "Empresa Estação": ["OPB", "OPB", "OPA", "OPC"],
     }).to_csv(root / "data/external/anatel/Estacoes_SMP_interlagos.csv", sep=";", index=False)
     with rasterio.open(root / "data/external/terrain/glo30_interlagos_crop.tif", "w", driver="GTiff",
                        height=200, width=200, count=1, dtype="float32", crs="EPSG:4326",

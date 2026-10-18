@@ -25,6 +25,7 @@ notes.md
 # Local Kiro agent and skill installations are not repository artifacts.
 .kiro/agents/
 .kiro/skills/
+experiments/configs/local/
 
 # Preserve only the reviewed G0 evidence; keep all other result outputs private.
 /results/*

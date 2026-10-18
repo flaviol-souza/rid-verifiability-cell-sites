@@ -1,0 +1,37 @@
+# Allowlist for the public repository cs-rid-hearing. Anything not listed stays private.
+# Code
+include src/*
+include src/**/*
+include analysis/*
+include experiments/*.py
+include experiments/configs/reference.yaml
+include experiments/configs/channel/*
+include tests/*
+include pyproject.toml
+include requirements*.txt
+include docs/stage-a-rules-v2.md
+# Public geometry (no personal data, no operator names)
+include data/external/anatel/cut_polygon.geojson
+include data/external/roi/*.geojson
+# Never exported, even if tracked
+exclude **/__pycache__/*
+exclude tools/*
+exclude experiments/configs/local/*
+exclude data/external/flights/*
+exclude data/interim/*
+# Regenerated, de-identified artefacts (untracked in the private repo)
+copy results/freeze_v2/numbers.tex -> results/freeze/numbers.tex
+copy results/freeze_v2/numbers_public.csv -> results/freeze/numbers.csv
+copy results/freeze_v2/results_freeze_public.md -> results/freeze/results_freeze.md
+copy results/stage_b/blockO/figures/fig_verifiability_gap_c1_generic.pdf -> figures/fig_verifiability_gap.pdf
+copy results/stage_b/blockO/figures/fig_observability_c1_generic.pdf -> figures/fig_observability.pdf
+copy results/stage_b/blockO/figures/fig_shadow_reduction_c1_generic.pdf -> figures/fig_shadow_reduction.pdf
+copy results/stage_b/map/fig_map_V3_consortium.pdf -> figures/fig_map_V3_consortium.pdf
+copy results/stage_b/mechanism/fig_geo_vs_sim.pdf -> figures/fig_geo_vs_sim.pdf
+copy results/stage_b/mechanism/fig_mechanism.pdf -> figures/fig_mechanism.pdf
+# Public-only files written for the new repository (kept in the private repo under public/)
+copy public/README.md -> README.md
+copy public/LICENSE -> LICENSE
+copy public/gitignore -> .gitignore
+copy public/data-README.md -> data/README.md
+allow-csv results/freeze/numbers.csv

@@ -76,7 +76,7 @@ def main() -> int:
     ap.add_argument("--root", default=".")
     ap.add_argument("--blocks", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--scenarios", default="consortium,VIVO")
+    ap.add_argument("--scenarios", default="consortium")
     ap.add_argument("--k", type=int, default=3)
     ap.add_argument("--family", default=None, help="default: the single family in the block")
     a = ap.parse_args()
@@ -88,7 +88,7 @@ def main() -> int:
         return 2
     R, D = float(b["range_ref_m"]), int(b["verif_scale_ref_m"])
     from analysis.alias import check, label as alabel, load_alias
-    alias = load_alias(cfg)
+    alias = load_alias(cfg, root)
     ch = yaml.safe_load((root / b["channel"]).read_text())
     d_lim = geo.crlb_range_limit_m(D, 3, ch["eta"], ch["shadow_sigma_db"])   # symmetric 3-site limit for σ_h ≤ D
     interim = root / cfg["stage_a"]["paths"]["interim_dir"]

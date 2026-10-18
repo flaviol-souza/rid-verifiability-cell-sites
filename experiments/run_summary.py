@@ -24,7 +24,7 @@ def main() -> int:
     cfg = yaml.safe_load((root / a.config).read_text())
     b = cfg["stage_b"]
     from analysis.alias import check, load_alias
-    alias = load_alias(cfg)
+    alias = load_alias(cfg, root)
     blk = root / a.blocks
     tbl = pd.read_parquet(blk / "session_metrics.parquet")
     check(alias, tbl["scenario"].unique())
