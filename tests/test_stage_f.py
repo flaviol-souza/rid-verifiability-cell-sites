@@ -146,3 +146,29 @@ def test_inventory_edge_uses_cut_polygon_and_rejects_inconsistent_cut(tmp_path):
     with pytest.raises(ValueError):
         geo.inventory_edge_distance_m(sites, [0.0], [0.0], -23.70, -46.70, bad)
     assert geo.load_cut_ring(tmp_path / "missing.geojson") is None
+
+
+def test_freeze_numbers_are_sourced_and_reproducible(tmp_path):
+    import hashlib
+    root = _workspace(tmp_path, range_ref=150)
+    assert _run("run_blocks.py", root, "--out", "results/blockO", "--seeds", "0-1").returncode == 0
+    assert _run("run_hypotheses.py", root, "--blocks", "results/blockO").returncode == 0
+    assert _run("run_summary.py", root, "--blocks", "results/blockO").returncode == 0
+    assert _run("run_blocks.py", root, "--out", "results/S1", "--seeds", "0-0").returncode == 0
+    assert _run("run_hypotheses.py", root, "--blocks", "results/S1").returncode == 0
+    assert _run("run_mechanism.py", root, "--blocks", "results/blockO", "--out", "results/mech",
+                "--scenarios", "consortium,A,B").returncode == 0
+    assert _run("run_map.py", root, "--out", "results/map", "--seeds", "0-0", "--min-time-s", "0").returncode == 0
+    args = ("--blockO", "results/blockO", "--mechanism", "results/mech", "--map", "results/map", "--out", "results/freeze",
+            "--family", "c1_generic", "--blockS", "s1=results/S1")
+    r = _run("run_freeze.py", root, *args)
+    assert r.returncode == 0, r.stderr
+    n = pd.read_csv(root / "results/freeze/numbers.csv")
+    assert n["key"].is_unique and n["source"].notna().all() and len(n) > 40
+    assert {"obs_k1_consortium_R150", "h2_V3_mean_gap", "h2S_s1_gap",
+            "inv_min_sample_distance_to_inventory_edge_m"} <= set(n["key"])
+    tex = (root / "results/freeze/numbers.tex").read_text()
+    assert "\\csname ds@h2_V3_mean_gap\\endcsname" in tex
+    h = hashlib.sha256(tex.encode()).hexdigest()
+    assert _run("run_freeze.py", root, *args).returncode == 0
+    assert hashlib.sha256((root / "results/freeze/numbers.tex").read_bytes()).hexdigest() == h
