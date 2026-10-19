@@ -10,12 +10,15 @@ include tests/*
 include pyproject.toml
 include requirements*.txt
 include docs/stage-a-rules-v2.md
+include tools/make_roi.py                 # builds the published RoI geometry; its tests are public
 # Public geometry (no personal data, no operator names)
 include data/external/anatel/cut_polygon.geojson
 include data/external/roi/*.geojson
 # Never exported, even if tracked
 exclude **/__pycache__/*
-exclude tools/*
+exclude tools/export_public.py            # the exporter and its manifest stay private
+exclude tools/MANIFEST-PUBLIC.txt
+exclude tests/test_export_public.py       # tests the private exporter
 exclude experiments/configs/local/*
 exclude data/external/flights/*
 exclude data/interim/*

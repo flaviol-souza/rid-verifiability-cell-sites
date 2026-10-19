@@ -49,9 +49,25 @@ def test_clean_export_copies_only_allowlisted_tracked_files(tmp_path):
     root = _private_repo(tmp_path)
     r = _run(root, tmp_path / "public")
     assert r.returncode == 0, r.stdout + r.stderr
-    got = sorted(str(p.relative_to(tmp_path / "public")).replace("\\", "/") for p in (tmp_path / "public").rglob("*") if p.is_file())
+    got = sorted(p.relative_to(tmp_path / "public").as_posix() for p in (tmp_path / "public").rglob("*") if p.is_file())
     assert got == ["experiments/configs/reference.yaml", "src/model.py", "src/notes.txt"]
     assert not (tmp_path / "public/experiments/configs/local").exists()      # private mapping never exported
+
+
+def test_published_test_depending_on_private_tool_is_reported(tmp_path):
+    root = _private_repo(tmp_path)
+    (root / "tools/helper.py").write_text("print('private')\n")
+    (root / "src/test_helper.py").write_text("TOOL = REPO / 'tools' / 'helper.py'\n")
+    _git(root, "add", "-A")
+    _git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "helper")
+    # the published test (copied to tests/) names tools/helper.py, which is tracked but not published
+    (root / "tools/MANIFEST-PUBLIC.txt").write_text(
+        "include src/model.py\ncopy src/test_helper.py -> tests/test_helper.py\n")
+    r = _run(root, tmp_path / "public")
+    assert r.returncode == 1
+    rep = json.loads((tmp_path / "public-EXPORT_REPORT.json").read_text())
+    assert any(f["file"] == "tests/test_helper.py" and "tools/helper.py" in f["issue"] for f in rep["findings"])
+    assert not (tmp_path / "public").exists()
 
 
 def test_leaks_are_reported_and_nothing_is_copied(tmp_path):

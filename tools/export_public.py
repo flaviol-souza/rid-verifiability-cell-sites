@@ -15,6 +15,7 @@ Findings (any finding -> exit 1, nothing is considered ready):
   * strings that must never be public (rejected-submission citation, old repository name, private keys, key values,
     the operator mapping block)
   * any raw flight identifier read from the raw flight file (values only compared, never printed)
+  * a published test that names a tracked .py file which is not published (it would fail in the public repo)
 PDFs are checked through `pdftotext` when it is available; otherwise they are reported as unchecked findings.
 """
 import argparse
@@ -146,6 +147,20 @@ def main() -> int:
         files.append({"path": dst, "sha256": hashlib.sha256(s.read_bytes()).hexdigest(), "bytes": s.stat().st_size})
     report = {"files": sorted(files, key=lambda f: f["path"]), "findings": findings,
               "raw_identifiers_checked": len(raw_ids), "deny_terms": len(deny), "tracked_but_not_exported": left_out}
+    # A published test must not depend on a script that stays private (it would fail in the public repo).
+    planned_dst = {d for _, d in plan}
+    tracked_by_name = {}
+    for p in tracked:
+        tracked_by_name.setdefault(Path(p).name, []).append(p)
+    for src, dst in plan:
+        if not (dst.startswith("tests/") and dst.endswith(".py")) or not (root / src).is_file():
+            continue
+        names = set(re.findall(r"""["']([\w.-]+\.py)["']""", (root / src).read_text(encoding="utf-8", errors="ignore")))
+        for n in sorted(names - {Path(dst).name}):
+            private = [p for p in tracked_by_name.get(n, []) if p not in planned_dst]
+            if private and not any(Path(d).name == n for d in planned_dst):
+                findings.append({"file": dst, "issue": f"test depends on non-exported file: {private[0]}"})
+    report["findings"] = findings
     if not findings and not a.dry_run:
         if dest.exists() and any(dest.iterdir()):
             raise SystemExit(f"{dest} exists and is not empty")
