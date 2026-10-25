@@ -1,0 +1,172 @@
+section,key,formatted,source,selector
+Observability,obs_k1_consortium_R100,0.90,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=observable_k1"
+Observability,obs_k1_consortium_R100_pct,90\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=observable_k1 [x100]"
+Observability,obs_k3_consortium_R100,0.64,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=observable_k3"
+Observability,obs_k3_consortium_R100_pct,64\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=observable_k3 [x100]"
+Observability,obs_k1_opB_R100,0.55,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=100.0, metric=observable_k1"
+Observability,obs_k1_opB_R100_pct,55\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=100.0, metric=observable_k1 [x100]"
+Observability,obs_k3_opB_R100,0.03,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=100.0, metric=observable_k3"
+Observability,obs_k3_opB_R100_pct,3\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=100.0, metric=observable_k3 [x100]"
+Observability,obs_k1_opC_R100,0.35,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=100.0, metric=observable_k1"
+Observability,obs_k1_opC_R100_pct,35\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=100.0, metric=observable_k1 [x100]"
+Observability,obs_k3_opC_R100,0.00,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=100.0, metric=observable_k3"
+Observability,obs_k3_opC_R100_pct,0\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=100.0, metric=observable_k3 [x100]"
+Observability,obs_k1_opA_R100,0.83,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=100.0, metric=observable_k1"
+Observability,obs_k1_opA_R100_pct,83\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=100.0, metric=observable_k1 [x100]"
+Observability,obs_k3_opA_R100,0.47,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=100.0, metric=observable_k3"
+Observability,obs_k3_opA_R100_pct,47\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=100.0, metric=observable_k3 [x100]"
+Verifiability,V3_D100_consortium_R100,0.38,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V3_D100"
+Verifiability,V3_D100_consortium_R100_pct,38\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V3_D100 [x100]"
+Verifiability,V3_D100_consortium_R100_cilo,0.16,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V3_D100 [ci_lo]"
+Verifiability,V3_D100_consortium_R100_cilo_pct,16\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V3_D100 [ci_lo] [x100]"
+Verifiability,V3_D100_consortium_R100_cihi,0.47,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V3_D100 [ci_hi]"
+Verifiability,V3_D100_consortium_R100_cihi_pct,47\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V3_D100 [ci_hi] [x100]"
+Serial heterogeneity,V3_D100_consortium_R100_serialw,0.22,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V3_D100 [serial_weighted_mean]"
+Serial heterogeneity,V3_D100_consortium_R100_serialw_pct,22\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V3_D100 [serial_weighted_mean] [x100]"
+Verifiability,V4_D100_consortium_R100,0.24,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V4_D100"
+Verifiability,V4_D100_consortium_R100_pct,24\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V4_D100 [x100]"
+Verifiability,V4_D100_consortium_R100_cilo,0.06,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V4_D100 [ci_lo]"
+Verifiability,V4_D100_consortium_R100_cilo_pct,6\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V4_D100 [ci_lo] [x100]"
+Verifiability,V4_D100_consortium_R100_cihi,0.31,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V4_D100 [ci_hi]"
+Verifiability,V4_D100_consortium_R100_cihi_pct,31\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V4_D100 [ci_hi] [x100]"
+Serial heterogeneity,V4_D100_consortium_R100_serialw,0.11,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V4_D100 [serial_weighted_mean]"
+Serial heterogeneity,V4_D100_consortium_R100_serialw_pct,11\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=100.0, metric=V4_D100 [serial_weighted_mean] [x100]"
+Verifiability,V3_D100_opB_R100,0.01,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=100.0, metric=V3_D100"
+Verifiability,V3_D100_opB_R100_pct,1\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=100.0, metric=V3_D100 [x100]"
+Verifiability,V4_D100_opB_R100,0.00,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=100.0, metric=V4_D100"
+Verifiability,V4_D100_opB_R100_pct,0\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=100.0, metric=V4_D100 [x100]"
+Verifiability,V3_D100_opC_R100,0.00,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=100.0, metric=V3_D100"
+Verifiability,V3_D100_opC_R100_pct,0\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=100.0, metric=V3_D100 [x100]"
+Verifiability,V4_D100_opC_R100,0.00,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=100.0, metric=V4_D100"
+Verifiability,V4_D100_opC_R100_pct,0\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=100.0, metric=V4_D100 [x100]"
+Verifiability,V3_D100_opA_R100,0.22,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=100.0, metric=V3_D100"
+Verifiability,V3_D100_opA_R100_pct,22\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=100.0, metric=V3_D100 [x100]"
+Verifiability,V4_D100_opA_R100,0.10,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=100.0, metric=V4_D100"
+Verifiability,V4_D100_opA_R100_pct,10\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=100.0, metric=V4_D100 [x100]"
+Observability,obs_k1_consortium_R200,0.99,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=observable_k1"
+Observability,obs_k1_consortium_R200_pct,99\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=observable_k1 [x100]"
+Observability,obs_k3_consortium_R200,0.92,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=observable_k3"
+Observability,obs_k3_consortium_R200_pct,92\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=observable_k3 [x100]"
+Observability,obs_k1_opB_R200,0.90,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=200.0, metric=observable_k1"
+Observability,obs_k1_opB_R200_pct,90\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=200.0, metric=observable_k1 [x100]"
+Observability,obs_k3_opB_R200,0.44,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=200.0, metric=observable_k3"
+Observability,obs_k3_opB_R200_pct,44\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=200.0, metric=observable_k3 [x100]"
+Observability,obs_k1_opC_R200,0.67,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=200.0, metric=observable_k1"
+Observability,obs_k1_opC_R200_pct,67\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=200.0, metric=observable_k1 [x100]"
+Observability,obs_k3_opC_R200,0.06,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=200.0, metric=observable_k3"
+Observability,obs_k3_opC_R200_pct,6\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=200.0, metric=observable_k3 [x100]"
+Observability,obs_k1_opA_R200,0.96,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=200.0, metric=observable_k1"
+Observability,obs_k1_opA_R200_pct,96\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=200.0, metric=observable_k1 [x100]"
+Observability,obs_k3_opA_R200,0.82,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=200.0, metric=observable_k3"
+Observability,obs_k3_opA_R200_pct,82\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=200.0, metric=observable_k3 [x100]"
+Verifiability,V3_D100_consortium_R200,0.66,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V3_D100"
+Verifiability,V3_D100_consortium_R200_pct,66\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V3_D100 [x100]"
+Verifiability,V3_D100_consortium_R200_cilo,0.33,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V3_D100 [ci_lo]"
+Verifiability,V3_D100_consortium_R200_cilo_pct,33\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V3_D100 [ci_lo] [x100]"
+Verifiability,V3_D100_consortium_R200_cihi,0.79,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V3_D100 [ci_hi]"
+Verifiability,V3_D100_consortium_R200_cihi_pct,79\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V3_D100 [ci_hi] [x100]"
+Serial heterogeneity,V3_D100_consortium_R200_serialw,0.45,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V3_D100 [serial_weighted_mean]"
+Serial heterogeneity,V3_D100_consortium_R200_serialw_pct,45\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V3_D100 [serial_weighted_mean] [x100]"
+Verifiability,V4_D100_consortium_R200,0.59,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V4_D100"
+Verifiability,V4_D100_consortium_R200_pct,59\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V4_D100 [x100]"
+Verifiability,V4_D100_consortium_R200_cilo,0.28,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V4_D100 [ci_lo]"
+Verifiability,V4_D100_consortium_R200_cilo_pct,28\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V4_D100 [ci_lo] [x100]"
+Verifiability,V4_D100_consortium_R200_cihi,0.72,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V4_D100 [ci_hi]"
+Verifiability,V4_D100_consortium_R200_cihi_pct,72\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V4_D100 [ci_hi] [x100]"
+Serial heterogeneity,V4_D100_consortium_R200_serialw,0.39,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V4_D100 [serial_weighted_mean]"
+Serial heterogeneity,V4_D100_consortium_R200_serialw_pct,39\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=consortium, range_m=200.0, metric=V4_D100 [serial_weighted_mean] [x100]"
+Verifiability,V3_D100_opB_R200,0.04,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=200.0, metric=V3_D100"
+Verifiability,V3_D100_opB_R200_pct,4\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=200.0, metric=V3_D100 [x100]"
+Verifiability,V4_D100_opB_R200,0.01,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=200.0, metric=V4_D100"
+Verifiability,V4_D100_opB_R200_pct,1\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator B, range_m=200.0, metric=V4_D100 [x100]"
+Verifiability,V3_D100_opC_R200,0.00,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=200.0, metric=V3_D100"
+Verifiability,V3_D100_opC_R200_pct,0\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=200.0, metric=V3_D100 [x100]"
+Verifiability,V4_D100_opC_R200,0.00,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=200.0, metric=V4_D100"
+Verifiability,V4_D100_opC_R200_pct,0\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator C, range_m=200.0, metric=V4_D100 [x100]"
+Verifiability,V3_D100_opA_R200,0.55,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=200.0, metric=V3_D100"
+Verifiability,V3_D100_opA_R200_pct,55\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=200.0, metric=V3_D100 [x100]"
+Verifiability,V4_D100_opA_R200,0.46,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=200.0, metric=V4_D100"
+Verifiability,V4_D100_opA_R200_pct,46\%,results/stage_b/blockO/summary/summary.csv,"family=c1_generic, scenario=Operator A, range_m=200.0, metric=V4_D100 [x100]"
+Serial heterogeneity,top_serial_session_share,51\%,results/stage_b/blockO/summary/summary.csv,any row [top_serial_session_share]
+Serial heterogeneity,n_sessions,89,results/stage_b/blockO/summary/summary.csv,any row [n_sessions]
+Serial heterogeneity,n_serials,20,results/stage_b/blockO/summary/summary.csv,any row [n_serials]
+Verifiability,V3_D100_opB_maxR,0.22,results/stage_b/blockO/summary/summary.csv,max over range_m of Operator B V3_D100
+Verifiability,V3_D100_opB_maxR_pct,22\%,results/stage_b/blockO/summary/summary.csv,max over range_m of Operator B V3_D100 [x100]
+Verifiability,V3_D100_opC_maxR,0.00,results/stage_b/blockO/summary/summary.csv,max over range_m of Operator C V3_D100
+Verifiability,V3_D100_opC_maxR_pct,0\%,results/stage_b/blockO/summary/summary.csv,max over range_m of Operator C V3_D100 [x100]
+Verifiability,V3_D100_opA_maxR,0.77,results/stage_b/blockO/summary/summary.csv,max over range_m of Operator A V3_D100
+Verifiability,V3_D100_opA_maxR_pct,77\%,results/stage_b/blockO/summary/summary.csv,max over range_m of Operator A V3_D100 [x100]
+H1 cooperation,h1_k1_R100,0.07,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=100.0, k=1"
+H1 cooperation,h1_k1_R100_pct,7\%,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=100.0, k=1 [x100]"
+H1 cooperation,h1_k1_R100_reject,yes,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=100.0, k=1 [reject_h0]"
+H1 cooperation,h1_k3_R100,0.17,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=100.0, k=3"
+H1 cooperation,h1_k3_R100_pct,17\%,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=100.0, k=3 [x100]"
+H1 cooperation,h1_k3_R100_reject,yes,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=100.0, k=3 [reject_h0]"
+H1 cooperation,h1_k1_R200,0.04,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=200.0, k=1"
+H1 cooperation,h1_k1_R200_pct,4\%,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=200.0, k=1 [x100]"
+H1 cooperation,h1_k1_R200_reject,yes,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=200.0, k=1 [reject_h0]"
+H1 cooperation,h1_k3_R200,0.11,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=200.0, k=3"
+H1 cooperation,h1_k3_R200_pct,11\%,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=200.0, k=3 [x100]"
+H1 cooperation,h1_k3_R200_reject,yes,results/stage_b/blockO/hypotheses/h1.csv,"family=c1_generic, range_m=200.0, k=3 [reject_h0]"
+H2 gap,h2_V3_mean_gap,0.33,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V3 [mean_gap]"
+H2 gap,h2_V3_mean_gap_pct,33\%,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V3 [mean_gap] [x100]"
+H2 gap,h2_V3_ci_lo,0.21,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V3 [ci_lo]"
+H2 gap,h2_V3_ci_lo_pct,21\%,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V3 [ci_lo] [x100]"
+H2 gap,h2_V3_ci_hi,0.65,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V3 [ci_hi]"
+H2 gap,h2_V3_ci_hi_pct,65\%,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V3 [ci_hi] [x100]"
+H2 gap,h2_V3_reject,yes,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V3 [reject_h0]"
+H2 gap,h2_V4_mean_gap,0.40,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V4 [mean_gap]"
+H2 gap,h2_V4_mean_gap_pct,40\%,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V4 [mean_gap] [x100]"
+H2 gap,h2_V4_ci_lo,0.28,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V4 [ci_lo]"
+H2 gap,h2_V4_ci_lo_pct,28\%,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V4 [ci_lo] [x100]"
+H2 gap,h2_V4_ci_hi,0.71,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V4 [ci_hi]"
+H2 gap,h2_V4_ci_hi_pct,71\%,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V4 [ci_hi] [x100]"
+H2 gap,h2_V4_reject,yes,results/stage_b/blockO/hypotheses/h2.csv,"family=c1_generic, level=V4 [reject_h0]"
+H2 robustness,h2S_group1_gap,0.33,results/stage_b/blockS_group1/hypotheses/h2.csv,level=V3 [mean_gap]
+H2 robustness,h2S_group1_gap_pct,33\%,results/stage_b/blockS_group1/hypotheses/h2.csv,level=V3 [mean_gap] [x100]
+H2 robustness,h2S_group1_reject,yes,results/stage_b/blockS_group1/hypotheses/h2.csv,level=V3 [reject_h0]
+H2 robustness,h2S_anchor_gap,0.33,results/stage_b/blockS_anchor/hypotheses/h2.csv,level=V3 [mean_gap]
+H2 robustness,h2S_anchor_gap_pct,33\%,results/stage_b/blockS_anchor/hypotheses/h2.csv,level=V3 [mean_gap] [x100]
+H2 robustness,h2S_anchor_reject,yes,results/stage_b/blockS_anchor/hypotheses/h2.csv,level=V3 [reject_h0]
+H2 robustness,h2S_agldem_gap,0.35,results/stage_b/blockS_agldem/hypotheses/h2.csv,level=V3 [mean_gap]
+H2 robustness,h2S_agldem_gap_pct,35\%,results/stage_b/blockS_agldem/hypotheses/h2.csv,level=V3 [mean_gap] [x100]
+H2 robustness,h2S_agldem_reject,yes,results/stage_b/blockS_agldem/hypotheses/h2.csv,level=V3 [reject_h0]
+H2 robustness,h2S_sigma8_gap,0.49,results/stage_b/blockS_sigma8/hypotheses/h2.csv,level=V3 [mean_gap]
+H2 robustness,h2S_sigma8_gap_pct,49\%,results/stage_b/blockS_sigma8/hypotheses/h2.csv,level=V3 [mean_gap] [x100]
+H2 robustness,h2S_sigma8_reject,yes,results/stage_b/blockS_sigma8/hypotheses/h2.csv,level=V3 [reject_h0]
+H3 ranking,h3_holds,6,results/stage_b/blockO/hypotheses/h3.csv,"range_m in [100.0, 200.0] [sum holds]"
+H3 ranking,h3_cells,6,results/stage_b/blockO/hypotheses/h3.csv,"range_m in [100.0, 200.0] [count]"
+Inventory and truncation,truncated_ranges,"300, 500, 750, 1000",results/stage_b/blockO/hypotheses/truncated_cells.csv,truncated == True
+Mechanism (exploratory),mech_rho_d3_consortium,-0.60,results/stage_b/mechanism/mechanism_summary.csv,scenario=consortium [spearman_rho]
+Mechanism (exploratory),mech_rho_geo_consortium,0.91,results/stage_b/mechanism/mechanism_summary.csv,scenario=consortium [spearman_rho_V3_D100_vs_geo]
+Mechanism (exploratory),mech_mae_geo_consortium,0.08,results/stage_b/mechanism/mechanism_summary.csv,scenario=consortium [mean_abs_V3_D100_minus_geo]
+Mechanism (exploratory),mech_mae_geo_consortium_pct,8\%,results/stage_b/mechanism/mechanism_summary.csv,scenario=consortium [mean_abs_V3_D100_minus_geo] [x100]
+Mechanism (exploratory),mech_rho_d3_opA,-0.79,results/stage_b/mechanism/mechanism_summary.csv,scenario=Operator A [spearman_rho]
+Mechanism (exploratory),mech_rho_geo_opA,0.91,results/stage_b/mechanism/mechanism_summary.csv,scenario=Operator A [spearman_rho_V3_D100_vs_geo]
+Mechanism (exploratory),mech_mae_geo_opA,0.08,results/stage_b/mechanism/mechanism_summary.csv,scenario=Operator A [mean_abs_V3_D100_minus_geo]
+Mechanism (exploratory),mech_mae_geo_opA_pct,8\%,results/stage_b/mechanism/mechanism_summary.csv,scenario=Operator A [mean_abs_V3_D100_minus_geo] [x100]
+Mechanism (exploratory),mech_rho_d3_opB,-0.60,results/stage_b/mechanism/mechanism_summary.csv,scenario=Operator B [spearman_rho]
+Mechanism (exploratory),mech_rho_geo_opB,0.50,results/stage_b/mechanism/mechanism_summary.csv,scenario=Operator B [spearman_rho_V3_D100_vs_geo]
+Mechanism (exploratory),mech_mae_geo_opB,0.02,results/stage_b/mechanism/mechanism_summary.csv,scenario=Operator B [mean_abs_V3_D100_minus_geo]
+Mechanism (exploratory),mech_mae_geo_opB_pct,2\%,results/stage_b/mechanism/mechanism_summary.csv,scenario=Operator B [mean_abs_V3_D100_minus_geo] [x100]
+Mechanism (exploratory),mech_sim_above_geo_consortium,12,results/stage_b/mechanism/mechanism_sessions.csv,scenario=consortium: sessions with V3 - V3_geo > 0.2
+Mechanism (exploratory),mech_geo_above_sim_consortium,2,results/stage_b/mechanism/mechanism_sessions.csv,scenario=consortium: sessions with V3_geo - V3 > 0.2
+Mechanism (exploratory),mech_sim_above_geo_opB,2,results/stage_b/mechanism/mechanism_sessions.csv,scenario=Operator B: sessions with V3 - V3_geo > 0.2
+Mechanism (exploratory),mech_geo_above_sim_opB,0,results/stage_b/mechanism/mechanism_sessions.csv,scenario=Operator B: sessions with V3_geo - V3 > 0.2
+Mechanism (exploratory),mech_sim_above_geo_opC,0,results/stage_b/mechanism/mechanism_sessions.csv,scenario=Operator C: sessions with V3 - V3_geo > 0.2
+Mechanism (exploratory),mech_geo_above_sim_opC,0,results/stage_b/mechanism/mechanism_sessions.csv,scenario=Operator C: sessions with V3_geo - V3 > 0.2
+Mechanism (exploratory),mech_sim_above_geo_opA,7,results/stage_b/mechanism/mechanism_sessions.csv,scenario=Operator A: sessions with V3 - V3_geo > 0.2
+Mechanism (exploratory),mech_geo_above_sim_opA,2,results/stage_b/mechanism/mechanism_sessions.csv,scenario=Operator A: sessions with V3_geo - V3 > 0.2
+Mechanism (exploratory),mech_close_unverifiable,4,results/stage_b/mechanism/mechanism_summary.csv,scenario=consortium [n_close_but_unverifiable]
+Mechanism (exploratory),mech_dlimit3,138,results/stage_b/mechanism/mechanism_summary.csv,d_limit_3sites_m
+Mechanism (exploratory),map_blind_share_consortium,11\%,results/stage_b/map/cells.csv,time share in cells with frac_V3_D100 < 0.1
+Mechanism (exploratory),map_v3_pooled_consortium,0.72,results/stage_b/map/cells.csv,time-weighted frac_V3_D100 (pooled over sessions)
+Mechanism (exploratory),map_v3_pooled_consortium_pct,72\%,results/stage_b/map/cells.csv,time-weighted frac_V3_D100 (pooled over sessions) [x100]
+Mechanism (exploratory),map_blind_share_opA,24\%,results/stage_b/map_opA/cells.csv,time share in cells with frac_V3_D100 < 0.1
+Mechanism (exploratory),map_v3_pooled_opA,0.61,results/stage_b/map_opA/cells.csv,time-weighted frac_V3_D100 (pooled over sessions)
+Mechanism (exploratory),map_v3_pooled_opA_pct,61\%,results/stage_b/map_opA/cells.csv,time-weighted frac_V3_D100 (pooled over sessions) [x100]
+Inventory and truncation,inv_min_sample_distance_to_inventory_edge_m,"1,288",results/stage_b/map/inventory_margin.json,min_sample_distance_to_inventory_edge_m
+Inventory and truncation,inv_max_untruncated_range_at_configured_r_max_m,232,results/stage_b/map/inventory_margin.json,max_untruncated_range_at_configured_r_max_m
+Inventory and truncation,inv_max_untruncated_range_if_r_max_raised_m,299,results/stage_b/map/inventory_margin.json,max_untruncated_range_if_r_max_raised_m
+Inventory and truncation,inv_configured_r_max_m,"1,000",results/stage_b/map/inventory_margin.json,configured_r_max_m
+Inventory and truncation,inv_basis,cut_polygon,results/stage_b/map/inventory_margin.json,basis

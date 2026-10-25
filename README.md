@@ -1,176 +1,83 @@
-# _Digital Shadows_: Detecção de _Spoofing_ de VANTs via Redes Celulares Oportunistas
+# Hearing Is Not Verifying: Remote ID Position Verifiability from Existing Cell Sites
 
-**Repository for the experimental artifacts of the paper submitted to SBRC 2026.**
+Code and artefacts for a study (under review) of how much of a drone's flight time at a mass event existing cellular
+sites could **observe** through Remote ID broadcasts, and how much of it they could **position-verify** from received
+signal strength. Position verifiability is bounded with a Cramér–Rao bound, for each operator alone and for all
+operators in cooperation.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue)
-![Status](https://img.shields.io/badge/status-Research%20Prototype-orange)
+> **Status:** research prototype accompanying a paper under review. A citation will be added if the paper is
+> accepted. Operators are de-identified as Operator A/B/C throughout.
 
-## 📋 Abstract
+## What the study does
 
-This project implements a **Cross-Layer Security Framework** designed to detect GPS Spoofing attacks in Unmanned Aerial Systems (UAS). Unlike traditional methods that rely on expensive primary radars, this approach leverages **Opportunistic Cellular Networks (5G)**.
+- **Input:** real drone tracks recorded at a Formula 1 event (Interlagos, São Paulo, 2025), and the licensed cellular
+  sites around the venue (public ANATEL records).
+- **Model:** a log-distance channel with spatially correlated shadowing, swept over the implied receiver range *R*.
+  The verification bound is V3 (known transmit power) or V4 (unknown power), at a scale *D*.
+- **Hypotheses (pre-registered):**
+  - H1: cooperation between operators reduces shadow time;
+  - H2: observability exceeds verifiability by more than 0.10;
+  - H3: the consortium ranks above every single operator.
+- **Statistics:** session means over seeds; cluster bootstrap by drone; paired Wilcoxon with Holm correction.
 
-By transforming existing Base Stations (gNB/eNB) into passive sniffers, the system validates the **Physical-Digital Consistency** of *Remote ID* packets. It compares the reported telemetry (Digital Layer) against the estimated location derived from RSSI and path-loss physics (Physical Layer) using a Trace-Driven simulation based on real infrastructure data from the **Interlagos F1 Circuit (São Paulo, Brazil)**.
-
-## 🖼️ System Overview (Problem vs. Solution)
-
-The approach addresses the **Critical Asymmetry** between the physical signal and the digital data. While *Remote ID* validates *who* is speaking, our system validates *where* the sender is physically located.
-
-![Concept of Physical-Digital Consistency](fisico_vs_digital.png)
-[cite_start]*> Figure 1: The attack scenario where an authenticated UAV reports a false position (Digital World) while occupying a restricted zone (Physical World), and the proposed detection via cellular infrastructure.*
-
-## 📂 Repository Structure
-
-The artifacts are organized to ensure reproducibility of the **SBRC 2026** results:
+## Repository layout
 
 ```text
-├── data/
-│   └── Estacoes_SMP_interlagos.csv    # Real ANATEL dataset of cellular towers (Operadora I, Operadora II, Operadora III)
-│   └── outputs/
-│       ├── bucket_metrics_remoteid.csv    # Processed time-series metrics (N_detecting, RSSI, etc.)
-│       └── top_15_risk_buckets.csv        # Identified "Risk Windows" (Blind spots > 15s)
-│
-├── src/
-│   └── research.md                       # Research scope, questions and evidence map
-│   ├── visualization/
-│   │   ├── serie_temporal.py              # Generates Figure 5 (Time Series Analysis)
-│   │   └── generate_heatmap.py            # Generates the HTML coverage map
-│
-├── results/
-│   ├── figures/                           # Generated PNGs for the paper
-│   └── remoteid_heatmap_cobertura.html    # Interactive Folium map with GDOP/RSSI layers
-│
-├── requirements.txt                       # Python dependencies
-└── README.md                              # This file
-
+src/drs/            data cleaning (Stage A), geometry, channel and observation model
+analysis/           observability, verifiability bound, hypotheses, statistics, geometry, figures, de-identification
+experiments/        runners (one per stage) and configs (reference.yaml, channel/)
+tests/              unit and integration tests (pytest)
+data/
+  external/anatel/  site extract (see Data availability) and the documented cut polygon
+  published/        drone-only, pseudonymised tracks (only if authorised; see Data availability)
+results/            generated, not versioned (except results/freeze/, see below)
 ```
 
----
+## Reproducing the results
 
-## 🚀 Key Features
+Requirements: Python [FILL IN version], `pip install -r requirements.txt`. Run the tests first: `python -m pytest -q`.
 
-* **Trace-Driven Simulation:** Uses real geolocation data of cellular towers (Lat/Lon/Height) to model the RF environment.
-* **A2G Channel Modeling:** Implements Log-Distance Path Loss with Stochastic Shadowing () and antenna downtilt penalties.
-* **Spoofing Injection Engine:** Simulates malicious actors injecting false GNSS coordinates to test detection robustness.
-* **Consistency Algorithm ():** Calculates the normalized divergence between  and  to flag anomalies.
-* **Risk Analysis:** Identifies "Risk Buckets" (Time windows where ) and correlates them with flight maneuvers.
+| Step | Command | Output |
+|---|---|---|
+| A. Clean raw tracks *(maintainers only; needs the raw data and the pseudonymisation key)* | `python experiments/run_stage_a.py` | `data/interim/` |
+| B. Simulation blocks | `python experiments/run_blocks.py --out results/stage_b/blockO --seeds 0-19` | per-session metrics |
+| C. Hypotheses | `python experiments/run_hypotheses.py --blocks results/stage_b/blockO` | `h1.csv`, `h2.csv`, `h3.csv` |
+| D. Summary and figures | `python experiments/run_summary.py --blocks results/stage_b/blockO` | `summary.csv`, figures |
+| E. Maps | `python experiments/run_map.py --out results/stage_b/map --scenario consortium --seeds 0-4` | map, `inventory_margin.json` |
+| F. Mechanism (exploratory) | `python experiments/run_mechanism.py --blocks results/stage_b/blockO --out results/stage_b/mechanism` | geometric vs simulated V3 |
+| G. Freeze | `python experiments/run_freeze.py ... --out results/freeze` | `numbers.tex`, `results_freeze.md` |
 
----
+The robustness variants (block S) are re-runs of step B with `--sample-filter`, `--agl` or `--override`
+([FILL IN: exact commands used]).
 
-## 🛠️ Installation & Usage
+Without the raw data, start from step B using the published interim tables (see Data availability).
 
-### Prerequisites
+**Every number in the paper comes from `results/freeze/numbers.tex`.** `results_freeze.md` maps each number to its
+source file and row, and records the sha256 of every input. Regenerating the freeze from the same inputs produces an
+identical `numbers.tex`.
 
-* Python 3.8 or higher
-* pip
+## Data availability
 
-### 1. Setup Environment
+| Data | Status | Why |
+|---|---|---|
+| Raw drone tracks (including pilot and home positions, serial numbers) | **Not published** | Personal data; provided under agreement |
+| Drone-only tracks with pseudonymous identifiers (HMAC) | [FILL IN: published / on request] | Requires the data provider's authorisation |
+| Pseudonymisation key | **Never stored or published** | Supplied through an environment variable at run time |
+| ANATEL site extract | [FILL IN] | Public records; operator names are de-identified in all outputs |
+| Frozen numbers (`results/freeze/`) | Published | Aggregates only |
 
-```bash
-git clone [https://https://github.com/flaviol-souza/cs-rid-spoofing.git](https://https://github.com/flaviol-souza/cs-rid-spoofing.git)
-cd cs-rid-spoofing
-pip install -r requirements.txt
+## Privacy and ethics
 
-```
+- Only drone positions are used in analyses and figures. Pilot and home positions serve only for altitude anchoring and
+  never leave the private pipeline.
+- Identifiers are replaced by keyed pseudonyms (HMAC). A test fails if a raw identifier appears in any tracked file.
+- Operators are reported as Operator A/B/C. Because the ANATEL records are public, this de-identification avoids naming
+  operators; it does not prevent re-identification from public data.
 
-### 2. Run the Simulation
+## License
 
-Execute the main script to process the flight paths, inject attacks, and calculate metrics.
+Code: MIT (see `LICENSE`). Data: see Data availability; data files are **not** covered by the code license.
 
-```bash
-See `research.md` for the current research scope and reproducibility workflow.
+## Contact
 
-```
-
-*Output:* This will generate `bucket_metrics_remoteid.csv` in the data folder.
-
-### 3. Generate Visualizations (Reproducing Paper Figures)
-
-**To generate the Time Series Risk Analysis (Figure 5 in the paper):**
-
-```bash
-python src/visualization/plot_risk_series.py
-
-```
-
-*Output:* `results/figures/figura5_serie_temporal_risco.png`
-
-**To generate the Interactive Heatmap:**
-
-```bash
-python src/visualization/generate_heatmap.py
-
-```
-
-*Output:* `results/remoteid_heatmap_cobertura.html` (Open this file in any web browser).
-
----
-
-## 📊 Methodology & Models
-
-### 1. Path Loss Model (Log-Distance Shadowing)
-
-The Received Signal Strength Indicator (RSSI) is estimated using the following link budget equation, adapted for urban/suburban Air-to-Ground (A2G) channels:
-
-$$ P_{rx}(d) = P_{tx} + G_{sys} - \left( PL(d_0) + 10\eta \log_{10}\left(\frac{d}{d_0}\right) + X_{\sigma} + L_{clutter} \right) $$
-
-Where:
-
-* : Path Loss Exponent (Suburban/Vegetation).
-* : Log-normal Shadowing.
-* : Additional loss due to antenna downtilt and static obstructions.
-
-### 2. Physical-Digital Consistency ()
-
-Spoofing is detected when the physical reality (RSSI) contradicts the digital claim (GPS). An alert is raised if:
-
-$$ \epsilon = \frac{|d_{RSSI} - d_{GPS}|}{d_{GPS}} \ge \tau $$
-
-Where  is the empirically determined decision threshold.
-
----
-
-## 📈 Results Summary
-
-The experiment evaluated the coverage and detection capabilities in the Interlagos Circuit scenario:
-
-| Metric | Result (Combined Scenario) | Note |
-| --- | --- | --- |
-| **Precision** | **71.94%** | High reliability for triggered alerts (Low False Alarm rate). |
-| **Recall** | **15.70%** | Limited by RF shadowing and antenna downtilt (blind spots). |
-| **Max Outage** | **~1 Hour** | Critical vulnerability identified in flight `F6Z9...33B85`. |
-
-*Full analysis available in the SBRC 2026 paper.*
-
----
-
-## 🤝 Citation
-
-If you use this code or dataset in your research, please cite our **SBRC 2026** paper:
-
-```bibtex
-@inproceedings{souza2026sbrc,
-  title={Além do Remote ID: Verificação de Consistência Físico-Digital de VANTs via Redes Celulares Oportunistas},
-  author={Souza, Flavio L. S. and Ribeiro, Carlos H. C. and Gurtov, Andrei and Junior, Lourenço A. P.},
-  booktitle={Anais do XLIII Simpósio Brasileiro de Redes de Computadores e Sistemas Distribuídos (SBRC)},
-  year={2026},
-  publisher={SBC},
-  address={Brazil}
-}
-
-```
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
-
-## 📧 Contact
-
-* **Flavio L. S. Souza** - flavio.souza@ga.ita.br
-* **Instituto Tecnológico de Aeronáutica (ITA)**
-
-```
-
-```
+[FILL IN: name, affiliation, e-mail]
