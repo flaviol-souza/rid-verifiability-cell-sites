@@ -63,8 +63,12 @@ def main() -> int:
     summ.to_csv(out / "summary.csv", index=False, lineterminator="\n")
     samples = pd.read_parquet(root / cfg["stage_a"]["paths"]["interim_dir"] / "samples.parquet")
     for fam in sorted(tbl["family"].unique()):
+        available = sorted(float(value) for value in tbl.loc[tbl["family"] == fam, "range_m"].unique())
+        requested = [value for value in (100.0, 200.0) if value in available]
+        if not requested and b.get("range_ref_m") is not None:
+            requested = [float(b["range_ref_m"])]
         desc, desc_drones = descriptive.tables_from_pipeline(
-            tbl, samples, float(cfg["stage_a"]["session_gap_s"]), fam
+            tbl, samples, float(cfg["stage_a"]["session_gap_s"]), fam, requested
         )
         desc.to_csv(out / f"descriptive_{fam}.csv", index=False, lineterminator="\n")
         desc_drones.to_csv(out / f"descriptive_per_drone_{fam}.csv", index=False, lineterminator="\n")

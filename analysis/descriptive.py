@@ -81,6 +81,8 @@ def tables_from_pipeline(metrics: pd.DataFrame, samples: pd.DataFrame, gap_cap_s
                  .groupby(["session_id", "uas_id"], as_index=False)["dur_s"].sum())
     rows, drone_rows = [], []
     scenarios = sorted(metrics.loc[metrics["family"] == family, "scenario"].unique())
+    available_ranges = set(metrics.loc[metrics["family"] == family, "range_m"].astype(float).unique())
+    ranges_m = [float(value) for value in ranges_m if float(value) in available_ranges]
     for scenario in scenarios:
         for range_m in ranges_m:
             selected = metrics[(metrics["family"] == family) & (metrics["scenario"] == scenario)
@@ -98,4 +100,4 @@ def tables_from_pipeline(metrics: pd.DataFrame, samples: pd.DataFrame, gap_cap_s
             rows.append(summary)
             drones.insert(0, "range_m", float(range_m)); drones.insert(0, "scenario", scenario)
             drones.insert(0, "family", family); drone_rows.append(drones)
-    return pd.DataFrame(rows), pd.concat(drone_rows, ignore_index=True)
+    return pd.DataFrame(rows), (pd.concat(drone_rows, ignore_index=True) if drone_rows else pd.DataFrame())
