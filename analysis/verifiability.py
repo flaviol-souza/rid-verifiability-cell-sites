@@ -98,3 +98,66 @@ def _fast_bounds(h, eta, sigma_db, cond_max):
     return pd.DataFrame({"sample_id": s.index.to_numpy(), "n_obs": s["n"].to_numpy(),
                          "sigma_h_v3_m": np.asarray(v3, dtype=float), "sigma_h_v4_m": np.asarray(v4, dtype=float),
                          "hdop": np.asarray(hd, dtype=float)})
+
+
+def fisher_information_v3(dxy_m: np.ndarray, d3_m: np.ndarray, eta: float, sigma_db: float) -> np.ndarray:
+    """Exact 2-D RSS Fisher information for known transmit power."""
+    dxy = np.asarray(dxy_m, dtype=float).reshape(-1, 2)
+    d3 = np.asarray(d3_m, dtype=float).reshape(-1)
+    if len(dxy) != len(d3) or np.any(d3 <= 0) or not np.all(np.isfinite(d3)):
+        raise ValueError("finite positive 3-D distances are required")
+    b = 10.0 * float(eta) / (float(sigma_db) * np.log(10.0))
+    g = b * dxy / d3[:, None] ** 2
+    return g.T @ g
+
+
+def sigma_h_from_information(information: np.ndarray, cond_max: float = 1e12) -> float:
+    """Horizontal CRLB from a 2x2 information matrix; inf when unresolved."""
+    J = np.asarray(information, dtype=float)
+    if J.shape != (2, 2) or not np.all(np.isfinite(J)):
+        return float("inf")
+    eig = np.linalg.eigvalsh((J + J.T) / 2)
+    if eig[0] <= 0 or eig[-1] / eig[0] > cond_max:
+        return float("inf")
+    return float(np.sqrt(np.reciprocal(eig).sum()))
+
+
+def inventory_bounded_decision(J_in: np.ndarray, J_omitted: np.ndarray, n_in: int, n_omitted: int,
+                               scale_m: float) -> dict:
+    """Truncated lower and inventory-bounded optimistic upper V3 decisions."""
+    lower_sigma = sigma_h_from_information(J_in)
+    lower = int(n_in >= 3 and lower_sigma <= scale_m)
+    n_possible = int(n_in + n_omitted)
+    if n_possible < 3:
+        return {"lower": lower, "upper": 0, "sigma_h_opt_m": float("inf"), "diagnostic": "too_few_possible"}
+    opt_sigma = sigma_h_from_information(np.asarray(J_in) + np.asarray(J_omitted))
+    if not np.isfinite(opt_sigma):
+        return {"lower": lower, "upper": 1, "sigma_h_opt_m": opt_sigma, "diagnostic": "unresolved_optimistic"}
+    return {"lower": lower, "upper": int(opt_sigma <= scale_m), "sigma_h_opt_m": opt_sigma, "diagnostic": "resolved"}
+
+
+def minimum_external_sites(J_opt: np.ndarray, d_edge_m: float, fisher_b: float, scale_m: float,
+                           n_possible: int) -> int:
+    """Lower bound on unknown sites beyond the inventory edge needed for V3."""
+    if not np.isfinite(d_edge_m) or d_edge_m <= 0 or fisher_b <= 0 or scale_m <= 0:
+        raise ValueError("positive finite edge distance, Fisher coefficient, and scale are required")
+    count_floor = max(0, 3 - int(n_possible))
+    if sigma_h_from_information(J_opt) <= scale_m:
+        return count_floor
+    eig = np.maximum(np.linalg.eigvalsh((np.asarray(J_opt) + np.asarray(J_opt).T) / 2), 0.0)
+
+    def variance(c: float) -> float:
+        return float(np.reciprocal(eig + c).sum())
+
+    target = float(scale_m) ** 2
+    lo, hi = 0.0, 1.0
+    while variance(hi) > target:
+        hi *= 2.0
+    for _ in range(100):
+        mid = (lo + hi) / 2.0
+        if variance(mid) > target:
+            lo = mid
+        else:
+            hi = mid
+    n_info = int(np.ceil(hi * d_edge_m**2 / fisher_b**2 - 1e-12))
+    return max(count_floor, n_info)
