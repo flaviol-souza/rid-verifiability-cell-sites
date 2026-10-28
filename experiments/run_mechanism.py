@@ -23,10 +23,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from analysis import geometry as geo  # noqa: E402
 from analysis import hypotheses as hy  # noqa: E402
 from analysis import observability as ob  # noqa: E402
+from analysis import figstyle as fs  # noqa: E402  one visual identity for every figure
 
-INK, INK_2, GRID = "#1f1f1e", "#5f5e58", "#e4e3df"
-SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]
-MARKERS = ["o", "s", "^", "D"]
+fs.use()
 
 
 def _spearman_ci(df, xcol, ycol, seed=0, n_boot=2000):
@@ -46,27 +45,110 @@ def _spearman_ci(df, xcol, ycol, seed=0, n_boot=2000):
     return rho, float(lo), float(hi)
 
 
-def _fig_geo_vs_sim(sess, scen, metric, D, R, out, alias=None):
+def _scenario_look(sc, alias):
+    """Paper label, colour and marker of a scenario come from its identity, never from its position
+    in --scenarios (the old SERIES[i] gave Operator A the consortium's colour when run alone)."""
     from analysis.alias import label as alabel
-    """Simulated V3 (with shadowing) against the geometric prediction (mean-heard links, no shadowing)."""
-    fig, ax = plt.subplots(figsize=(3.5, 3.7))
-    ax.plot([0, 1], [0, 1], color=INK_2, linewidth=0.8, linestyle="--", label="y = x")
-    for i, sc in enumerate(scen):
+    key = fs.scenario_key(alabel(sc, alias))
+    return fs.SCENARIO[key]["label"], fs.SCENARIO[key]["color"], fs.MARKER[key]   # one spelling: "Consortium"
+
+
+DIFF_CUT = 0.2      # |simulated - geometric| above this counts as a disagreement (artifact note)
+
+
+def _trivial(d, metric):
+    """A scenario whose flights all sit at (0, 0) agrees with the geometry by definition (no three sites)."""
+    return len(d) > 0 and d[f"{metric}_geo"].abs().max() < 1e-9 and d[metric].abs().max() < 1e-9
+
+
+def _geo_vs_sim_stats(d, metric):
+    """Agreement figures for the artifact: Spearman, share with |diff| > DIFF_CUT split by direction
+    (simulated above / below the geometric prediction), and the two extreme columns."""
+    g, v = d[f"{metric}_geo"].to_numpy(float), d[metric].to_numpy(float)
+    ok = np.isfinite(g) & np.isfinite(v)
+    g, v = g[ok], v[ok]
+    rho = float(spearmanr(g, v).statistic) if len(g) > 2 and np.ptp(g) > 0 and np.ptp(v) > 0 else float("nan")
+    return dict(n=len(g), spearman_rho=rho,
+                frac_abs_diff_gt=float(np.mean(np.abs(v - g) > DIFF_CUT)) if len(g) else np.nan,
+                n_sim_above=int(np.sum(v - g > DIFF_CUT)), n_sim_below=int(np.sum(g - v > DIFF_CUT)),
+                n_geo0_sim_high=int(np.sum((g <= 1e-9) & (v > DIFF_CUT))),
+                n_geo1_sim_low=int(np.sum((g >= 1 - 1e-9) & (v < 1 - DIFF_CUT))))
+
+
+def _fig_geo_vs_sim(sess, scen, metric, D, R, out, alias=None):
+    """Simulated V3 (with shadowing) against the geometric prediction (no shadowing). Artifact only.
+    Each point is one flight in one scenario. Spearman is given PER SCENARIO (one pooled value would
+    hide the scenario where the prediction is weak); the disagreement share excludes scenarios whose
+    flights all sit at (0, 0), which agree by definition, and is split by direction."""
+    fig = fs.figure(fs.WIDTH_HALF_IN, 10.8)
+    ax = fs.axes_cm(fig, 1.25, 4.85, 5.75, 5.75)
+    ax.plot([0, 1], [0, 1], **fs.DIAGONAL, zorder=1, label="$y = x$")
+    lines, keep, excluded = [], [], []
+    for sc in scen:
         d = sess[sess["scenario"] == sc]
-        ax.scatter(d[f"{metric}_geo"], d[metric], s=14, color=SERIES[i % 4], marker=MARKERS[i % 4], alpha=0.75,
-                   linewidths=0, label=alabel(sc, alias))
-    ax.set_xlim(-0.03, 1.03); ax.set_ylim(-0.03, 1.03); ax.set_aspect("equal")
-    ax.set_xlabel(f"geometric V3 (links within R = {int(R)} m, no shadowing)", color=INK, fontsize=8)
-    ax.set_ylabel(f"simulated V3 (D = {D} m)", color=INK, fontsize=8)
-    ax.tick_params(colors=INK_2, labelsize=7)
-    ax.grid(True, color=GRID, linewidth=0.6); ax.set_axisbelow(True)
-    for s_ in ("top", "right"):
-        ax.spines[s_].set_visible(False)
+        lab, col, mk = _scenario_look(sc, alias)
+        trivial = _trivial(d, metric)
+        ax.scatter(d[f"{metric}_geo"], d[metric], s=11, color=col, marker=mk, alpha=0.8, linewidths=0,
+                   zorder=3, label=f"{lab}: all flights at (0, 0)" if trivial else lab, clip_on=False)
+        if trivial:
+            excluded.append(lab)
+        else:
+            keep.append(sc)
+            rho = _geo_vs_sim_stats(d, metric)["spearman_rho"]
+            lines.append(f"{lab.replace('Operator ', 'Op. ')}: {rho:.2f}")
+    st = _geo_vs_sim_stats(sess[sess["scenario"].isin(keep)], metric)
+    # every number below is computed from `sess` (block outputs + geometry), never typed
+    excl = f", {' and '.join(excluded)} excluded" if excluded else ""
+    note = ("one point = one flight in one scenario (a flight\u2013scenario pair)\n"
+            "Spearman $\\rho$: " + "; ".join(lines) + "\n"
+            f"$|\\Delta| > {DIFF_CUT}$: {st['frac_abs_diff_gt']:.0%} of flight\u2013scenario pairs{excl}\n"
+            f"({st['n_sim_above']} above, {st['n_sim_below']} below $y = x$; "
+            f"{st['n_sim_above'] + st['n_sim_below']}/{st['n']})")
+    H = fig.get_size_inches()[1] / fs.CM          # the note sits under the legend: it can never cover a point
+    fig.text(0.03, 0.12 / H, note, ha="left", va="bottom", fontsize=fs.PT["annot"] - 1, linespacing=1.35)
+    fs.fraction_axis(ax, f"simulated $V_3$ ($D$ = {D} m)", axis="both"); ax.set_aspect("equal")
+    ax.set_xlabel(f"geometric $V_3$\n(links within $R$ = {int(R)} m, no shadowing)")
+    fs.tidy(ax)
     h, l = ax.get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=3, fontsize=7, frameon=False)
-    fig.tight_layout(rect=(0, 0.12, 1, 1))
-    fig.savefig(out / "fig_geo_vs_sim.pdf", metadata={"CreationDate": None, "ModDate": None})
-    fig.savefig(out / "fig_geo_vs_sim.png", dpi=200)
+    fig.legend(h[1:] + h[:1], l[1:] + l[:1], loc="lower center", bbox_to_anchor=(0.5, 1.85 / H), ncol=2,
+               frameon=False, columnspacing=0.8, handletextpad=0.2, handlelength=1.2)
+    fs.save(fig, out / "fig_geo_vs_sim")
+    plt.close(fig)
+
+
+def _fig_mechanism(sess, scen, metric, dcol, k, R, D, d_lim, out, alias=None):
+    """F3. V3 per flight against the median distance to the k-th nearest site, one panel per scenario.
+    Panel titles name the scenario; the legend holds only the reference lines and the edge marker."""
+    fig = fs.figure(fs.WIDTH_FULL_IN, 6.6)
+    axes = [fs.axes_row(fig, len(scen), left=1.25, right=0.15, bottom=2.0, top=0.55, gap=0.3)]
+    dmin, dmax = sess[dcol].replace(np.inf, np.nan).min(), sess[dcol].replace(np.inf, np.nan).max()
+    lo, hi = min(dmin, d_lim, R) / 1.3, max(dmax, R) * 1.3
+    narrow = len(scen) > 2                              # 4 panels of ~3.4 cm: label 100, 300, 1000 only
+    for i, (ax, sc) in enumerate(zip(axes[0], scen)):
+        d = sess[sess["scenario"] == sc]
+        lab, col, mk = _scenario_look(sc, alias)
+        inner, edge = d[d["frac_time_inventory_edge"] <= 0.5], d[d["frac_time_inventory_edge"] > 0.5]
+        ax.axvline(R, **fs.RANGE_LINE, zorder=1, label=f"$R$ = {int(R)} m")
+        ax.axvline(d_lim, **fs.REF_LINE, zorder=1, label=rf"$d^\star_{{3}} \approx {d_lim:.0f}$ m")
+        ax.scatter(inner[dcol], inner[metric], s=11, color=col, marker=mk, alpha=0.8, linewidths=0, zorder=3,
+                   clip_on=False)
+        if len(edge):
+            ax.scatter(edge[dcol], edge[metric], s=13, facecolors="none", edgecolors=fs.MUTED, marker="o",
+                       linewidths=0.7, zorder=3, clip_on=False, label="flight mostly near the inventory edge")
+        fs.log_distance_axis(ax, lo, hi, labelled=(100, 300, 1000) if narrow else fs.X_TICKS)
+        fs.fraction_axis(ax, f"$V_3$ ($D$ = {D} m)" if i == 0 else None)
+        ax.set_title(f"({'abcdefgh'[i]}) {lab}" if len(scen) > 1 else lab)
+        fs.tidy(ax)
+    nth = {1: "1st", 2: "2nd", 3: "3rd"}.get(k, f"{k}th")
+    xlab = f"median distance from the drone to its {nth}-nearest site (m)"
+    fs.label_strip(fig, xlab, y_cm=0.75)               # one x label for all panels, above the legend
+    seen, hh = set(), []                               # reference lines + edge marker, once
+    for ax in axes[0]:
+        for h_, l_ in zip(*ax.get_legend_handles_labels()):
+            if l_ not in seen:
+                seen.add(l_); hh.append(h_)
+    fs.legend_below(fig, hh)
+    fs.save(fig, out / "fig_mechanism")
     plt.close(fig)
 
 
@@ -130,6 +212,7 @@ def main() -> int:
                      f"spearman_rho_{metric}_vs_geo": rho_g, "rho_geo_ci_lo": lo_g, "rho_geo_ci_hi": hi_g,
                      f"mean_abs_{metric}_minus_geo": float((m[metric] - m[f"{metric}_geo"]).abs().mean()),
                      "n_close_but_unverifiable": len(odd),
+                     **{f"geo_vs_sim_{k_}": v_ for k_, v_ in _geo_vs_sim_stats(m, metric).items()},
                      f"mean_{metric}_geo_close_but_unverifiable": odd[f"{metric}_geo"].mean() if len(odd) else np.nan})
     sess = pd.concat(rows, ignore_index=True)
     out = root / a.out
@@ -138,45 +221,7 @@ def main() -> int:
     pd.DataFrame(summ).to_csv(out / "mechanism_summary.csv", index=False, lineterminator="\n")
 
     scen = a.scenarios.split(",")
-    fig, axes = plt.subplots(1, len(scen), figsize=(6.3, 2.7), sharey=True, sharex=True, squeeze=False)
-    dcol = f"d{a.k}_median_m"
-    for i, (ax, sc) in enumerate(zip(axes[0], scen)):
-        d = sess[sess["scenario"] == sc]
-        inner, edge = d[d["frac_time_inventory_edge"] <= 0.5], d[d["frac_time_inventory_edge"] > 0.5]
-        ax.scatter(inner[dcol], inner[metric], s=14, color=SERIES[i], marker=MARKERS[i], alpha=0.8,
-                   linewidths=0, label="session")
-        if len(edge):
-            ax.scatter(edge[dcol], edge[metric], s=18, facecolors="none", edgecolors=INK_2, marker=MARKERS[i],
-                       linewidths=0.8, label="session, mostly near inventory edge")
-        ax.axvline(R, color=INK_2, linewidth=0.8, linestyle="--", label=f"R = {int(R)} m")
-        ax.axvline(d_lim, color=INK_2, linewidth=0.8, linestyle=":",
-                   label=f"3-site CRLB limit for D = {D} m ({d_lim:.0f} m)")
-        ax.set_xscale("log")
-        ax.set_xticks([t for t in (25, 50, 100, 200, 500, 1000, 2000, 5000)])
-        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}"))
-        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-        ax.set_ylim(-0.03, 1.03)
-        ax.set_title(alabel(sc, alias), fontsize=9, color=INK)
-        if i == 0:
-            ax.set_ylabel(f"V3 (D = {D} m), fraction of time", color=INK, fontsize=8)
-        ax.tick_params(colors=INK_2, labelsize=7)
-        ax.grid(True, color=GRID, linewidth=0.6); ax.set_axisbelow(True)
-        for s_ in ("top", "right"):
-            ax.spines[s_].set_visible(False)
-    dmin, dmax = sess[dcol].replace(np.inf, np.nan).min(), sess[dcol].replace(np.inf, np.nan).max()
-    axes[0][0].set_xlim(min(dmin, R) / 1.3, max(dmax, R) * 1.3)
-    seen, hh, ll = set(), [], []
-    for ax in axes[0]:
-        for hi, li in zip(*ax.get_legend_handles_labels()):
-            if li not in seen and li != "session":
-                seen.add(li); hh.append(hi); ll.append(li)
-    fig.tight_layout(rect=(0, 0.16, 1, 1))
-    fig.text(0.5, 0.105, f"median distance to {a.k}rd nearest site of the scenario (m)" if a.k == 3 else
-             f"median distance to site #{a.k} of the scenario (m)", color=INK, fontsize=8, ha="center")
-    fig.legend(hh, ll, loc="lower center", ncol=len(ll), fontsize=7, frameon=False)
-    fig.savefig(out / "fig_mechanism.pdf", metadata={"CreationDate": None, "ModDate": None})
-    fig.savefig(out / "fig_mechanism.png", dpi=200)
-    plt.close(fig)
+    _fig_mechanism(sess, scen, metric, f"d{a.k}_median_m", a.k, R, D, d_lim, out, alias)
     _fig_geo_vs_sim(sess, scen, metric, D, R, out, alias)
     print(pd.DataFrame(summ).to_string(index=False))
     return 0
