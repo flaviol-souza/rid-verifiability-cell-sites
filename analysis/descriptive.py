@@ -69,3 +69,33 @@ def aggregate_descriptive(frame: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
             "gap_leave_dominant_out": heard_loo - v3_loo,
         })
     return out, drones
+
+
+def tables_from_pipeline(metrics: pd.DataFrame, samples: pd.DataFrame, gap_cap_s: float,
+                         family: str, ranges_m=(100.0, 200.0)) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Build descriptive aggregates after averaging seeds, from the same sample-time basis as H2."""
+    from analysis.observability import time_weights_s
+
+    weights = time_weights_s(samples, gap_cap_s)
+    durations = (samples.assign(dur_s=weights)
+                 .groupby(["session_id", "uas_id"], as_index=False)["dur_s"].sum())
+    rows, drone_rows = [], []
+    scenarios = sorted(metrics.loc[metrics["family"] == family, "scenario"].unique())
+    for scenario in scenarios:
+        for range_m in ranges_m:
+            selected = metrics[(metrics["family"] == family) & (metrics["scenario"] == scenario)
+                               & (metrics["range_m"] == float(range_m))
+                               & metrics["metric"].isin(["observable_k1", "V3_D100"])]
+            averaged = selected.groupby(["session_id", "uas_id", "metric"], as_index=False)["value"].mean()
+            wide = averaged.pivot(index=["session_id", "uas_id"], columns="metric", values="value").reset_index()
+            if not {"observable_k1", "V3_D100"} <= set(wide):
+                continue
+            frame = wide.merge(durations, on=["session_id", "uas_id"], validate="one_to_one").rename(
+                columns={"observable_k1": "heard", "V3_D100": "v3"})
+            summary, drones = aggregate_descriptive(frame)
+            summary.update({"family": family, "scenario": scenario, "range_m": float(range_m),
+                            "metric_definition": "descriptive; seeds averaged before time aggregation"})
+            rows.append(summary)
+            drones.insert(0, "range_m", float(range_m)); drones.insert(0, "scenario", scenario)
+            drones.insert(0, "family", family); drone_rows.append(drones)
+    return pd.DataFrame(rows), pd.concat(drone_rows, ignore_index=True)

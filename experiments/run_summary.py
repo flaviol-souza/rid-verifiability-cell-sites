@@ -12,6 +12,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from analysis import figstyle as fs  # noqa: E402
 from analysis import make_figures as mf  # noqa: E402
+from analysis import descriptive  # noqa: E402
 from analysis import summarize  # noqa: E402
 
 R_MAX_KEYS = ("r_max_m", "rmax_m", "candidate_radius_m", "site_radius_m")   # inventory radius (1 km)
@@ -60,6 +61,13 @@ def main() -> int:
     out = blk / "summary"; out.mkdir(exist_ok=True)
     summ = summarize.summary_table(tbl)
     summ.to_csv(out / "summary.csv", index=False, lineterminator="\n")
+    samples = pd.read_parquet(root / cfg["stage_a"]["paths"]["interim_dir"] / "samples.parquet")
+    for fam in sorted(tbl["family"].unique()):
+        desc, desc_drones = descriptive.tables_from_pipeline(
+            tbl, samples, float(cfg["stage_a"]["session_gap_s"]), fam
+        )
+        desc.to_csv(out / f"descriptive_{fam}.csv", index=False, lineterminator="\n")
+        desc_drones.to_csv(out / f"descriptive_per_drone_{fam}.csv", index=False, lineterminator="\n")
     figs = blk / "figures"
     r_star = None
     if a.hatch_from_rstar:
