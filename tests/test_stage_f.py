@@ -79,8 +79,11 @@ def test_mechanism_summary_has_geometric_columns_and_map_modes(tmp_path):
     r = _run("run_mechanism.py", root, "--blocks", "results/blockO", "--out", "results/mech", "--scenarios", "consortium")
     assert r.returncode == 0, r.stderr
     summ = pd.read_csv(root / "results/mech/mechanism_summary.csv")
-    assert {"d_limit_3sites_m", "spearman_rho_V3_D100_vs_geo", "n_close_but_unverifiable"} <= set(summ.columns)
+    assert {"d_limit_3sites_m", "spearman_rho_V3_D100_vs_geo", "n_close_but_unverifiable",
+            "distant_flights_v3_R1000_upper_below_0_1_fraction", "distant_flights_min_external_sites"} <= set(summ.columns)
     sess = pd.read_csv(root / "results/mech/mechanism_sessions.csv")
+    assert {"v3_R1000_lower", "v3_R1000_upper", "n_star_R1000"} <= set(sess.columns)
+    assert (sess["v3_R1000_lower"] <= sess["v3_R1000_upper"]).all()
     assert sess["V3_D100_geo"].between(0, 1).all()
     for extra in ([], ["--full-extent"]):
         r = _run("run_map.py", root, "--out", "results/m", "--seeds", "0-0", "--min-time-s", "0", *extra)

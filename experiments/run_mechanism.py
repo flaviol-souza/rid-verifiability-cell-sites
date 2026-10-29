@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from analysis import geometry as geo  # noqa: E402
 from analysis import hypotheses as hy  # noqa: E402
 from analysis import observability as ob  # noqa: E402
+from drs.channel import observe, pathloss  # noqa: E402
 from analysis import figstyle as fs  # noqa: E402  one visual identity for every figure
 
 fs.use()
@@ -132,6 +133,12 @@ def _fig_mechanism(sess, scen, metric, dcol, k, R, D, d_lim, out, alias=None):
         ax.axvline(d_lim, **fs.REF_LINE, zorder=1, label=rf"$d^\star_{{3}} \approx {d_lim:.0f}$ m")
         ax.scatter(inner[dcol], inner[metric], s=11, color=col, marker=mk, alpha=0.8, linewidths=0, zorder=3,
                    clip_on=False)
+        if {"v3_R1000_lower", "v3_R1000_upper"} <= set(d.columns):
+            ax.vlines(d[dcol], d["v3_R1000_lower"], d["v3_R1000_upper"], color=col, alpha=0.35,
+                      linewidth=0.8, zorder=2,
+                      label="R = 1000 m: truncated lower to inventory-bounded upper" if i == 0 else None)
+            ax.scatter(d[dcol], d["v3_R1000_lower"], s=10, facecolors="none", edgecolors=col,
+                       linewidths=0.6, zorder=3)
         if len(edge):
             ax.scatter(edge[dcol], edge[metric], s=13, facecolors="none", edgecolors=fs.MUTED, marker="o",
                        linewidths=0.7, zorder=3, clip_on=False, label="flight mostly near the inventory edge")
@@ -183,12 +190,39 @@ def main() -> int:
     sm = hy.session_means(pd.read_parquet(root / a.blocks / "session_metrics.parquet"))
     fam = a.family or sorted(sm["family"].unique())[0]
     metric = f"V3_D{D}"
+    R_bound = 1000.0
 
     rows, summ = [], []
+    lat0, lon0 = geo.common_origin(all_sites)
+    sample_x, sample_y = geo.local_xy_m(samples["lat"], samples["lon"], lat0, lon0)
+    edge_distance = geo.inventory_edge_distance_m(all_sites, sample_x, sample_y, lat0, lon0, cut_ring)[0]
     for sc in a.scenarios.split(","):
         sites = all_sites if sc == "consortium" else \
             all_sites[all_sites["operator"].str.split("|").apply(lambda ops, s=sc: s in ops)]
         g = geo.session_geometry(samples, sites, all_sites, w, a.k, R, cut_ring)
+        bound_rows = []
+        ch_bound = dict(ch, sniffer_sens_dbm=pathloss.gamma_for_range_dbm(R_bound, ch))
+        for seed in b["seeds"]:
+            observations = observe.observe(samples, sites, ch_bound, int(seed))
+            bounds = geo.inventory_bounded_sample_v3(
+                samples, sites, observations, ch["r_max_m"], ch["sniffer_height_m"], ch["eta"],
+                ch["shadow_sigma_db"], D, edge_distance
+            ).set_index("sample_id")
+            tmp = samples[["sample_id", "session_id"]].copy()
+            tmp["w"] = w.to_numpy()
+            for column in ("v3_lower", "v3_upper"):
+                tmp[column] = tmp["sample_id"].map(bounds[column]).to_numpy()
+            tmp["n_star"] = tmp["sample_id"].map(bounds["n_star"]).to_numpy()
+            for session_id, part in tmp.groupby("session_id", sort=True):
+                den = part["w"].sum()
+                bound_rows.append({"session_id": session_id, "seed": seed,
+                                   "v3_R1000_lower": float((part["v3_lower"] * part["w"]).sum() / den),
+                                   "v3_R1000_upper": float((part["v3_upper"] * part["w"]).sum() / den),
+                                   "n_star_R1000": geo.weighted_median(part["n_star"], part["w"])})
+        bound_sessions = pd.DataFrame(bound_rows).groupby("session_id", as_index=False).agg(
+            v3_R1000_lower=("v3_R1000_lower", "mean"), v3_R1000_upper=("v3_R1000_upper", "mean"),
+            n_star_R1000=("n_star_R1000", "min"))
+        g = g.merge(bound_sessions, on="session_id", how="left", validate="one_to_one")
         sg, ng = geo.geometric_sigma_h(samples, sites, R, ch["sniffer_height_m"], ch["eta"], ch["shadow_sigma_db"])
         ok = ((ng >= 3) & (sg <= D)).astype(float)
         vgeo = pd.Series(ok * w.to_numpy()).groupby(samples["session_id"].to_numpy()).sum() \
@@ -203,6 +237,9 @@ def main() -> int:
         near, far = m[m[dcol] <= R], m[m[dcol] > R]
         rho_g, lo_g, hi_g = _spearman_ci(m, f"{metric}_geo", metric)
         odd = m[(m[dcol] <= d_lim) & (m[metric] < 0.1)]                # close sites, yet (almost) never verifiable
+        distant = m[m[dcol] > R]
+        upper_low_fraction = float((distant["v3_R1000_upper"] < 0.1).mean()) if len(distant) else np.nan
+        min_external_sites = float(distant["n_star_R1000"].min()) if len(distant) else np.nan
         summ.append({"scenario": sc, "range_m": R, "metric": metric, "k": a.k, "n_sessions": len(m),
                      "spearman_rho": rho, "rho_ci_lo": lo, "rho_ci_hi": hi,
                      "n_near": len(near), f"mean_{metric}_near": near[metric].mean() if len(near) else np.nan,
@@ -212,6 +249,8 @@ def main() -> int:
                      f"spearman_rho_{metric}_vs_geo": rho_g, "rho_geo_ci_lo": lo_g, "rho_geo_ci_hi": hi_g,
                      f"mean_abs_{metric}_minus_geo": float((m[metric] - m[f"{metric}_geo"]).abs().mean()),
                      "n_close_but_unverifiable": len(odd),
+                     "distant_flights_v3_R1000_upper_below_0_1_fraction": upper_low_fraction,
+                     "distant_flights_min_external_sites": min_external_sites,
                      **{f"geo_vs_sim_{k_}": v_ for k_, v_ in _geo_vs_sim_stats(m, metric).items()},
                      f"mean_{metric}_geo_close_but_unverifiable": odd[f"{metric}_geo"].mean() if len(odd) else np.nan})
     sess = pd.concat(rows, ignore_index=True)
