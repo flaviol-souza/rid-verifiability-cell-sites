@@ -238,8 +238,9 @@ def main() -> int:
         rho_g, lo_g, hi_g = _spearman_ci(m, f"{metric}_geo", metric)
         odd = m[(m[dcol] <= d_lim) & (m[metric] < 0.1)]                # close sites, yet (almost) never verifiable
         distant = m[m[dcol] > R]
-        upper_low_fraction = float((distant["v3_R1000_upper"] < 0.1).mean()) if len(distant) else np.nan
-        min_external_sites = float(distant["n_star_R1000"].min()) if len(distant) else np.nan
+        bounded_low = distant[distant["v3_R1000_upper"] < 0.1]
+        upper_low_fraction = float(len(bounded_low) / len(distant)) if len(distant) else np.nan
+        min_external_sites = float(bounded_low["n_star_R1000"].min()) if len(bounded_low) else np.nan
         summ.append({"scenario": sc, "range_m": R, "metric": metric, "k": a.k, "n_sessions": len(m),
                      "spearman_rho": rho, "rho_ci_lo": lo, "rho_ci_hi": hi,
                      "n_near": len(near), f"mean_{metric}_near": near[metric].mean() if len(near) else np.nan,
