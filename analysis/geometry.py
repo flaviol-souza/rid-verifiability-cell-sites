@@ -139,3 +139,40 @@ def crlb_range_limit_m(scale_m: float, n_sites: int, eta: float, sigma_db: float
     σ_h = 2 d / (b √n), b = 10 η / (σ ln 10)  ⇒  d_max = scale · b · √n / 2."""
     b = 10.0 * eta / (sigma_db * np.log(10.0))
     return float(scale_m * b * np.sqrt(n_sites) / 2.0)
+
+
+def inventory_bounded_sample_v3(samples: pd.DataFrame, sites: pd.DataFrame, observations: pd.DataFrame,
+                                r_max_m: float, h_rx_m: float, eta: float, sigma_db: float,
+                                scale_m: float, edge_distance_m: np.ndarray) -> pd.DataFrame:
+    """Per-sample truncated/optimistic V3 and external-site lower bound.
+
+    Heard links inside r_max form J_in. Every known inventory site beyond
+    r_max contributes its exact directional Fisher matrix optimistically.
+    """
+    from analysis import verifiability as vf
+
+    lat0, lon0 = common_origin(sites)
+    x, y = local_xy_m(samples["lat"], samples["lon"], lat0, lon0)
+    sx, sy = local_xy_m(sites["lat"], sites["lon"], lat0, lon0)
+    heard = observations.loc[observations["heard"].astype(bool)]
+    heard_groups = {sid: group for sid, group in heard.groupby("sample_id", sort=False)}
+    b = 10.0 * eta / (sigma_db * np.log(10.0))
+    rows = []
+    for pos, sample in enumerate(samples.itertuples(index=False)):
+        group = heard_groups.get(sample.sample_id)
+        if group is None:
+            J_in, n_in = np.zeros((2, 2)), 0
+        else:
+            J_in = vf.fisher_information_v3(group[["dx_m", "dy_m"]].to_numpy(), group["d3_m"].to_numpy(), eta, sigma_db)
+            n_in = len(group)
+        dx, dy = x[pos] - sx, y[pos] - sy
+        d3 = np.sqrt(dx * dx + dy * dy + (float(sample.agl_m) - h_rx_m) ** 2)
+        omitted = d3 > r_max_m
+        J_omitted = vf.fisher_information_v3(np.c_[dx[omitted], dy[omitted]], d3[omitted], eta, sigma_db)
+        decision = vf.inventory_bounded_decision(J_in, J_omitted, n_in, int(omitted.sum()), scale_m)
+        n_star = vf.minimum_external_sites(J_in + J_omitted, float(edge_distance_m[pos]), b, scale_m,
+                                           n_in + int(omitted.sum()))
+        rows.append({"sample_id": sample.sample_id, "v3_lower": decision["lower"], "v3_upper": decision["upper"],
+                     "sigma_h_opt_m": decision["sigma_h_opt_m"], "n_possible": n_in + int(omitted.sum()),
+                     "n_star": n_star, "bound_diagnostic": decision["diagnostic"]})
+    return pd.DataFrame(rows)

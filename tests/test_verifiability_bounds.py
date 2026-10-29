@@ -44,3 +44,16 @@ def test_unresolved_optimistic_case_is_explicit_and_upper_one():
     result = inventory_bounded_decision(np.zeros((2, 2)), np.zeros((2, 2)), 0, 3, 100.0)
     assert result["upper"] == 1
     assert result["diagnostic"] == "unresolved_optimistic"
+
+
+def test_sample_inventory_bound_includes_known_sites_beyond_rmax():
+    import pandas as pd
+    from analysis.geometry import inventory_bounded_sample_v3
+    samples = pd.DataFrame({"sample_id": [1], "lat": [0.0], "lon": [0.0], "agl_m": [30.0]})
+    m = 1 / 111195.0
+    sites = pd.DataFrame({"lat": [100*m, -50*m, -50*m], "lon": [0.0, 87*m, -87*m]})
+    obs = pd.DataFrame(columns=["sample_id", "dx_m", "dy_m", "d3_m", "heard"])
+    result = inventory_bounded_sample_v3(samples, sites, obs, 50.0, 30.0, 2.2, 6.0, 200.0, np.array([1300.0]))
+    assert result.loc[0, "n_possible"] == 3
+    assert result.loc[0, "v3_upper"] == 1
+    assert result.loc[0, "v3_lower"] == 0
