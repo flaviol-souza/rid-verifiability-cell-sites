@@ -22,7 +22,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-SECTIONS = ["Observability", "Verifiability", "Serial heterogeneity", "H1 cooperation", "H2 gap", "H2 robustness",
+SECTIONS = ["Observability", "Verifiability", "Serial heterogeneity", "Descriptive", "H1 cooperation", "H2 gap", "H2 robustness",
             "H3 ranking", "Mechanism (exploratory)", "Inventory and truncation"]
 
 
@@ -127,6 +127,24 @@ def main() -> int:
            "any row [top_serial_session_share]", "pct")
     fz.add("Serial heterogeneity", "n_sessions", row["n_sessions"], sp, "any row [n_sessions]", "int")
     fz.add("Serial heterogeneity", "n_serials", row["n_serials"], sp, "any row [n_serials]", "int")
+
+    dp = blk / "summary" / f"descriptive_{fam}.csv"
+    if dp.exists():
+        desc = pd.read_csv(dp)
+        for _, drow in desc.iterrows():
+            scenario_key = akey(str(drow["scenario"]), alias)
+            suffix = f"{scenario_key}_R{int(drow['range_m'])}"
+            for column in ("heard_pooled", "v3_pooled", "gap_pooled", "heard_per_drone_mean",
+                           "v3_per_drone_mean", "gap_per_drone_mean"):
+                fz.add("Descriptive", f"desc_{column}_{suffix}", drow[column], dp,
+                       f"scenario={drow['scenario']}, range_m={drow['range_m']} [{column}]")
+            if str(drow["scenario"]) == "consortium" and float(drow["range_m"]) == Rref:
+                for column, kind in (("total_flight_time_s", "int"), ("median_session_duration_s", "frac"),
+                                     ("dominant_time_share", "frac"), ("dominant_v3", "frac"),
+                                     ("heard_leave_dominant_out", "frac"), ("v3_leave_dominant_out", "frac"),
+                                     ("gap_leave_dominant_out", "frac"), ("n_drones_v3_below_0_5", "int")):
+                    fz.add("Descriptive", f"desc_{column}", drow[column], dp,
+                           f"consortium, range_m={Rref} [{column}]", kind)
     for op in ops:
         t = s[(s["family"] == fam) & (s["scenario"] == op) & (s["metric"] == f"V3_D{D}")]
         fz.add("Verifiability", f"V3_D{D}_{akey(op, alias)}_maxR", t["mean"].max(), sp, f"max over range_m of {op} V3_D{D}")
@@ -191,6 +209,13 @@ def main() -> int:
     fz.add("Mechanism (exploratory)", "mech_close_unverifiable", row["n_close_but_unverifiable"], mp,
            "scenario=consortium [n_close_but_unverifiable]", "int")
     fz.add("Mechanism (exploratory)", "mech_dlimit3", row["d_limit_3sites_m"], mp, "d_limit_3sites_m", "m")
+    if "distant_flights_v3_R1000_upper_below_0_1_fraction" in row:
+        fz.add("Mechanism (exploratory)", "mech_distant_R1000_upper_below_0_1_fraction",
+               row["distant_flights_v3_R1000_upper_below_0_1_fraction"], mp,
+               "scenario=consortium [d3>200m and inventory-bounded upper V3<0.1]")
+        fz.add("Mechanism (exploratory)", "mech_distant_min_external_sites",
+               row["distant_flights_min_external_sites"], mp,
+               "scenario=consortium [minimum n_star beyond cut polygon]", "int")
 
     # --- maps: share of flight time in cells that are (almost) never verifiable
     for spec in a.map_scenario:
