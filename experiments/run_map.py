@@ -104,7 +104,7 @@ def main() -> int:
     show = cells[cells["time_s"] >= a.min_time_s]
     cmap = LinearSegmentedColormap.from_list("blue", BLUE_RAMP)
     sc = ax.scatter(show["cell_x_m"], show["cell_y_m"], c=show[f"frac_V3_D{int(D)}"], cmap=cmap, vmin=0, vmax=1,
-                    marker="s", s=(a.cell_m / 40) ** 2 * 4, linewidths=0)
+                    marker="s", s=(a.cell_m / 40) ** 2 * 4, linewidths=0, rasterized=True)
     edge = show[show["inventory_edge"]]
     if len(edge):
         ax.scatter(edge["cell_x_m"], edge["cell_y_m"], marker="s", s=(a.cell_m / 40) ** 2 * 4, facecolors="none",
