@@ -73,3 +73,16 @@ def test_map_runner(tmp_path):
     cells = pd.read_csv(root / "results/map/cells.csv")
     assert cells["frac_V3_D100"].between(0, 1).all() and (cells["frac_observable_k1"] >= cells["frac_V3_D100"]).all()
     assert (root / "results/map/fig_map_V3_consortium.pdf").exists()
+
+
+def test_h2_numbers_selects_v3_row():
+    from analysis.make_figures import _h2_numbers
+    h2 = pd.DataFrame({
+        "family": ["c1_generic", "c1_generic"],
+        "range_m": [200.0, 200.0],
+        "level": ["V3", "V4"],
+        "mean_gap": [0.33, 0.40],
+        "ci_lo": [0.21, 0.28],
+        "ci_hi": [0.65, 0.71],
+    })
+    assert _h2_numbers(h2, "c1_generic", 200.0) == (0.33, 0.21, 0.65)

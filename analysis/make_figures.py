@@ -60,6 +60,8 @@ def _h2_numbers(h2, family, ref_range):
         d = d[d["family"] == family]
     if "range_m" in d:
         d = d[np.isclose(d["range_m"].astype(float), float(ref_range))]
+    if "level" in d:
+        d = d[d["level"] == "V3"]
     if len(d) != 1:
         return None
     pick = lambda *names: next((float(d[n].iloc[0]) for n in names if n in d), None)  # noqa: E731
