@@ -35,7 +35,7 @@ STYLE_FILE = Path(__file__).with_name("style.mplstyle")
 CM = 1 / 2.54
 WIDTH_FULL_IN = 15.0 * CM
 WIDTH_HALF_IN = 7.3 * CM
-PT = dict(text=8, tick=8, label=8.5, title=9, legend=8, annot=8)
+PT = dict(text=9, tick=9, label=10, title=10, legend=9, annot=9)
 FONT = "TeX Gyre Termes"
 
 # ---- scenarios: one colour, dash and marker each, fixed for the whole paper ----------------------
