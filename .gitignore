@@ -20,7 +20,14 @@
 !/data/external/flights/flights_anon.csv
 /data/external/flights/raw/
 
+# Local control files, never committed.
 notes.md
+CLAUDE.md
+AGENTS.md
+/.kiro/
+/data/
+/docs/
+fisico_vs_digital.png
 
 # Local Kiro agent and skill installations are not repository artifacts.
 .kiro/agents/

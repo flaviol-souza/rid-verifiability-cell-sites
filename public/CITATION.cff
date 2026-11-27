@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper."
+title: "Hearing Is Not Verifying: Bounding Remote ID Position Checks from Existing Cell Sites"
+type: software
+license: MIT
+repository-code: "https://github.com/flaviol-souza/rid-verifiability-cell-sites"
+authors:
+  - {family-names: Souza, given-names: "Flavio L. S."}
+  - {family-names: "da Silva", given-names: "Antonia Mayara de A."}
+  - {family-names: Melo, given-names: "André Luiz Elias"}
+  - {family-names: Pereira Junior, given-names: "Lourenço Alves"}
+  - {family-names: Gurtov, given-names: Andrei}
+  - {family-names: Ribeiro, given-names: "Carlos H. C."}

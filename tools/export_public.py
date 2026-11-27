@@ -126,11 +126,14 @@ def main() -> int:
         if ext in BLOCKED_EXT:
             findings.append({"file": dst, "issue": f"blocked file type {ext}"})
             continue
-        if ext in {".csv", ".png", ".jpg", ".jpeg"} and not match(dst, allow):
+        if ext in {".csv", ".png", ".jpg", ".jpeg", ".gif"} and not match(dst, allow):
             findings.append({"file": dst, "issue": f"{ext} not allowed by allow-csv"})
             continue
         if s.stat().st_size > a.max_mb * 1e6:
             findings.append({"file": dst, "issue": f"larger than {a.max_mb} MB"})
+            continue
+        if ext == ".gif":   # binary image, allow-listed by name and checked by eye; a text scan only gives false hits
+            files.append({"path": dst, "sha256": hashlib.sha256(s.read_bytes()).hexdigest(), "bytes": s.stat().st_size})
             continue
         txt = text_of(s)
         if txt is None:

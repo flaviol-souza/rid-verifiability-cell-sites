@@ -1,4 +1,4 @@
-# Allowlist for the public repository cs-rid-hearing. Anything not listed stays private.
+# Allowlist for the public repository rid-verifiability-cell-sites. Anything not listed stays private.
 # Code
 include src/*
 include src/**/*
@@ -9,11 +9,13 @@ include experiments/configs/channel/*
 include tests/*
 include pyproject.toml
 include requirements*.txt
-include docs/stage-a-rules-v2.md
+copy docs/stage-a-rules-v2.md -> docs/stage-a-rules-v2.md   # data/ and docs/ are untracked locally
 include tools/make_roi.py                 # builds the published RoI geometry; its tests are public
 # Public geometry (no personal data, no operator names)
-include data/external/anatel/cut_polygon.geojson
-include data/external/roi/*.geojson
+copy data/external/anatel/cut_polygon.geojson -> data/external/anatel/cut_polygon.geojson
+copy data/external/roi/roi.geojson -> data/external/roi/roi.geojson
+copy data/external/roi/domain.geojson -> data/external/roi/domain.geojson
+copy data/external/roi/osm_autodromo.geojson -> data/external/roi/osm_autodromo.geojson
 # Never exported, even if tracked
 exclude **/__pycache__/*
 exclude tools/export_public.py            # the exporter and its manifest stay private
@@ -23,9 +25,9 @@ exclude experiments/configs/local/*
 exclude data/external/flights/*
 exclude data/interim/*
 # Regenerated, de-identified artefacts (untracked in the private repo)
-copy results/freeze_v2/numbers.tex -> results/freeze/numbers.tex
-copy results/freeze_v2/numbers_public.csv -> results/freeze/numbers.csv
-copy results/freeze_v2/results_freeze_public.md -> results/freeze/results_freeze.md
+copy results/freeze_v4/numbers.tex -> results/freeze/numbers.tex
+copy results/freeze_v4/numbers_public.csv -> results/freeze/numbers.csv
+copy results/freeze_v4/results_freeze_public.md -> results/freeze/results_freeze.md
 copy results/stage_b/blockO/figures/fig_verifiability_gap_c1_generic.pdf -> figures/fig_verifiability_gap.pdf
 copy results/stage_b/blockO/figures/fig_observability_c1_generic.pdf -> figures/fig_observability.pdf
 copy results/stage_b/blockO/figures/fig_shadow_reduction_c1_generic.pdf -> figures/fig_shadow_reduction.pdf
@@ -38,3 +40,7 @@ copy public/LICENSE -> LICENSE
 copy public/gitignore -> .gitignore
 copy public/data-README.md -> data/README.md
 allow-csv results/freeze/numbers.csv
+copy public/CITATION.cff -> CITATION.cff
+copy public/pitch.gif -> assets/pitch.gif
+allow-csv assets/pitch.gif
+include tools/check_terrain.py

@@ -1,83 +1,13 @@
-# Hearing Is Not Verifying: Remote ID Position Verifiability from Existing Cell Sites
+# Private working repository
 
-Code and artefacts for a study (under review) of how much of a drone's flight time at a mass event existing cellular
-sites could **observe** through Remote ID broadcasts, and how much of it they could **position-verify** from received
-signal strength. Position verifiability is bounded with a Cramér–Rao bound, for each operator alone and for all
-operators in cooperation.
+Working repository for the paper *Hearing Is Not Verifying* (SBRC 2027). It holds code, tests and private tooling.
+The public repository, `rid-verifiability-cell-sites`, is built from this one:
 
-> **Status:** research prototype accompanying a paper under review. A citation will be added if the paper is
-> accepted. Operators are de-identified as Operator A/B/C throughout.
-
-## What the study does
-
-- **Input:** real drone tracks recorded at a Formula 1 event (Interlagos, São Paulo, 2025), and the licensed cellular
-  sites around the venue (public ANATEL records).
-- **Model:** a log-distance channel with spatially correlated shadowing, swept over the implied receiver range *R*.
-  The verification bound is V3 (known transmit power) or V4 (unknown power), at a scale *D*.
-- **Hypotheses (pre-registered):**
-  - H1: cooperation between operators reduces shadow time;
-  - H2: observability exceeds verifiability by more than 0.10;
-  - H3: the consortium ranks above every single operator.
-- **Statistics:** session means over seeds; cluster bootstrap by drone; paired Wilcoxon with Holm correction.
-
-## Repository layout
-
-```text
-src/drs/            data cleaning (Stage A), geometry, channel and observation model
-analysis/           observability, verifiability bound, hypotheses, statistics, geometry, figures, de-identification
-experiments/        runners (one per stage) and configs (reference.yaml, channel/)
-tests/              unit and integration tests (pytest)
-data/
-  external/anatel/  site extract (see Data availability) and the documented cut polygon
-  published/        drone-only, pseudonymised tracks (only if authorised; see Data availability)
-results/            generated, not versioned (except results/freeze/, see below)
+```bash
+python tools/export_public.py --manifest tools/MANIFEST-PUBLIC.txt --dest ../rid-verifiability-cell-sites --dry-run
 ```
 
-## Reproducing the results
+The public README is `public/README.md`. Raw data, `data/`, `docs/`, `.kiro/`, `CLAUDE.md`, `AGENTS.md` and `notes.md` stay local and are git-ignored.
+Never publish anything outside the allowlist in `tools/MANIFEST-PUBLIC.txt`.
 
-Requirements: Python [FILL IN version], `pip install -r requirements.txt`. Run the tests first: `python -m pytest -q`.
-
-| Step | Command | Output |
-|---|---|---|
-| A. Clean raw tracks *(maintainers only; needs the raw data and the pseudonymisation key)* | `python experiments/run_stage_a.py` | `data/interim/` |
-| B. Simulation blocks | `python experiments/run_blocks.py --out results/stage_b/blockO --seeds 0-19` | per-session metrics |
-| C. Hypotheses | `python experiments/run_hypotheses.py --blocks results/stage_b/blockO` | `h1.csv`, `h2.csv`, `h3.csv` |
-| D. Summary and figures | `python experiments/run_summary.py --blocks results/stage_b/blockO` | `summary.csv`, figures |
-| E. Maps | `python experiments/run_map.py --out results/stage_b/map --scenario consortium --seeds 0-4` | map, `inventory_margin.json` |
-| F. Mechanism (exploratory) | `python experiments/run_mechanism.py --blocks results/stage_b/blockO --out results/stage_b/mechanism` | geometric vs simulated V3 |
-| G. Freeze | `python experiments/run_freeze.py ... --out results/freeze` | `numbers.tex`, `results_freeze.md` |
-
-The robustness variants (block S) are re-runs of step B with `--sample-filter`, `--agl` or `--override`
-([FILL IN: exact commands used]).
-
-Without the raw data, start from step B using the published interim tables (see Data availability).
-
-**Every number in the paper comes from `results/freeze/numbers.tex`.** `results_freeze.md` maps each number to its
-source file and row, and records the sha256 of every input. Regenerating the freeze from the same inputs produces an
-identical `numbers.tex`.
-
-## Data availability
-
-| Data | Status | Why |
-|---|---|---|
-| Raw drone tracks (including pilot and home positions, serial numbers) | **Not published** | Personal data; provided under agreement |
-| Drone-only tracks with pseudonymous identifiers (HMAC) | [FILL IN: published / on request] | Requires the data provider's authorisation |
-| Pseudonymisation key | **Never stored or published** | Supplied through an environment variable at run time |
-| ANATEL site extract | [FILL IN] | Public records; operator names are de-identified in all outputs |
-| Frozen numbers (`results/freeze/`) | Published | Aggregates only |
-
-## Privacy and ethics
-
-- Only drone positions are used in analyses and figures. Pilot and home positions serve only for altitude anchoring and
-  never leave the private pipeline.
-- Identifiers are replaced by keyed pseudonyms (HMAC). A test fails if a raw identifier appears in any tracked file.
-- Operators are reported as Operator A/B/C. Because the ANATEL records are public, this de-identification avoids naming
-  operators; it does not prevent re-identification from public data.
-
-## License
-
-Code: MIT (see `LICENSE`). Data: see Data availability; data files are **not** covered by the code license.
-
-## Contact
-
-[FILL IN: name, affiliation, e-mail]
+Tests: `python -m pytest -q`
