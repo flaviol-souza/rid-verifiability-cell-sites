@@ -1,0 +1,13 @@
+# Channel family C1 — generic log-distance. Every constant with its source or marked as an assumption.
+family: c1_generic
+freq_hz: 2440000000.0            # centre of the 2.4 GHz ISM band (Bluetooth / Wi-Fi Remote ID); assumption
+d0_m: 1.0
+eta: 2.2                   # assumption (declared); swept indirectly through gamma / implied range
+shadow_sigma_db: 6.0       # assumption (declared); S-block 4 / 8 dB
+shadow_dcorr_m: 0.0        # ⚠ BM-9: 0 = i.i.d. until a source for elevated 2.4 GHz links is found
+clutter_db: 0.0            # ⚠ no source (BM-8); its effect is covered by the gamma sweep (results reported vs R)
+eirp_dbm: 20.0             # Holybro Remote ID datasheet: +20 dBm ERP (ERP used as EIRP, BM-25)
+sniffer_sens_dbm: -95.0    # ⚠ BM-8: anchored on the GhostBuster noise floor; swept
+sniffer_height_m: 30.0     # assumption (BM-3); S-block 15 / 45 m
+r_max_m: 1000.0            # candidate radius = domain erosion (site inventory complete within 1 km)
+tail_max: 0.01             # if P(heard at r_max) > tail_max, observability in that cell is a lower bound

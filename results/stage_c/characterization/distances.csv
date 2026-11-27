@@ -1,0 +1,4 @@
+quantity,n,p5,p25,p50,p75,p95
+distance_drone_pilot_m,11254,2.61,56.64,178.78,308.1,454.57
+distance_drone_home_m,11254,0.86,58.52,172.68,311.05,457.95
+distance_drone_ground_ref_m,280,7.16,13.38,81.23,183.99,193.49

@@ -1,0 +1,26 @@
+metric,value
+rules_version,v2
+n_serials,20
+n_sessions,89
+n_samples,12203
+agl_p1_p5_p50_p95_p99_m,"[5.13, 6.77, 21.86, 85.39, 127.2]"
+agl_dem_p50_m,29.39
+sessions_by_anchor,"{'ground_ref': 6, 'home': 71, 'none': 12}"
+frac_samples_group_size_1,0.0489
+speed_estimator,since_first_seen
+speed_p50_p95_p99_mps,"[2.41, 12.34, 16.23]"
+c9_excluded,19
+c9_excluded_frac,0.00155
+c9_excluded_with_alt_estimator_diag,366
+role_consistency,0.9615
+frac_in_domain,1.0
+frac_in_roi,0.8119
+dem_missing,0
+failing,[]
+G0,PASS
+check_agl_p50_in_range,True
+check_no_agl_below_min,True
+check_speed_excluded_frac_ok,True
+check_all_in_domain,True
+check_dem_missing_zero,True
+check_role_consistency_ok,True

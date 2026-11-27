@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.env
+# private inputs and mappings: never committed
+experiments/configs/local/
+data/external/flights/
+data/external/anatel/*.csv
+data/external/terrain/
+data/interim/
+# generated results (the published freeze lives in results/freeze/)
+results/*
+!results/freeze/
+*.parquet

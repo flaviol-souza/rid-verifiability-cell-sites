@@ -1,0 +1,5 @@
+quantity,n,p5,p25,p50,p75,p95
+session_duration_s,89,18.4,32.0,100.0,294.0,693.6
+sessions_per_serial,20,1.0,1.0,2.0,2.25,10.8
+serials_seen_on_more_than_one_day,20,,,4.0,,
+frac_samples_in_roi,12203,,,0.8119,,

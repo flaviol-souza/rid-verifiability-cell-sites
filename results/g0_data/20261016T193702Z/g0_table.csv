@@ -1,0 +1,18 @@
+metric,value
+n_serials,20
+n_sessions,92
+n_samples,13966
+agl_p1_p5_p50_p95_p99_m,"[6.08, 8.28, 27.32, 85.38, 132.12]"
+speed_p50_p95_p99_mps,"[0.0, 0.0, 32.63]"
+c9_excluded,514
+c9_excluded_frac,0.0355
+frac_in_domain,1.0
+frac_in_roi,0.8372
+dem_missing,0
+failing,['speed_excluded_frac_ok']
+G0,FAIL
+check_agl_p50_in_range,True
+check_no_agl_below_min,True
+check_speed_excluded_frac_ok,False
+check_all_in_domain,True
+check_dem_missing_zero,True
