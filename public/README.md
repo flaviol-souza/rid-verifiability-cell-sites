@@ -90,4 +90,4 @@ Code: MIT (`LICENSE`). Data files are not covered by it.
 
 ## Contact
 
-Flavio L. S. Souza, ITA. flavio.souza@ga.ita.br
+Flavio L. S. Souza, ITA. flavioluiz.ssouza@gmail.com
