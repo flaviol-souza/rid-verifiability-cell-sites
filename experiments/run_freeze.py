@@ -31,7 +31,7 @@ class Freezer:
         self.root, self.rows, self.inputs = root, [], {}
 
     def _src(self, path: Path) -> str:
-        rel = str(path.relative_to(self.root))
+        rel = path.relative_to(self.root).as_posix()
         if rel not in self.inputs:
             self.inputs[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
         return rel
@@ -45,6 +45,8 @@ class Freezer:
             fmt = f"{float(value):.2f}"
         elif kind == "m":
             fmt = f"{float(value):,.0f}"
+        elif kind == "dec1":
+            fmt = f"{float(value):.1f}"
         elif kind == "int":
             fmt = f"{int(value)}"
         elif kind == "pct":
@@ -83,6 +85,10 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--family", default="c1_generic")
     ap.add_argument("--map-scenario", action="append", default=[], help="scenario=map_dir, repeatable")
+    ap.add_argument("--interim", default="data/interim", help="Stage A outputs (samples, ground_refs)")
+    ap.add_argument("--anatel", default="data/external/anatel/Estacoes_SMP_interlagos.csv")
+    ap.add_argument("--f3-dir", default=None, help="folder with f3_sessions_<scenario>.csv (default: <mechanism>/diagnostics)")
+    ap.add_argument("--skip-derived", action="store_true", help="tests only: skip the Section 4 and block B keys")
     ap.add_argument("--allow-raw-names", action="store_true", help="internal use only: keep operator names in keys")
     a = ap.parse_args()
     root = Path(a.root).resolve()
@@ -237,6 +243,42 @@ def main() -> int:
         fz.add("Inventory and truncation", f"inv_{k}", j[k], jp, k, kind)
     fz.add("Inventory and truncation", "inv_basis", j["basis"], jp, "basis", "text")
 
+    if not a.skip_derived:
+        # --- Section 4 pitfalls (3 macros): computed on the frozen sessions, pilot positions never leave this block
+        from analysis.pitfalls import load_pitfall_input, pitfall_stats
+        ip = root / a.interim
+        ps = pitfall_stats(load_pitfall_input(ip))
+        if ps["_n_flights"] != int(fz.rows[[r["key"] for r in fz.rows].index("n_sessions")]["value"]):
+            raise SystemExit(f"pitfall_stats saw {ps['_n_flights']} flights, expected n_sessions")
+        psrc = ip / "samples.parquet"
+        fz._src(ip / "ground_refs.parquet")
+        for key_, sel in (("desc_pilot_distance_median_m", "median drone-pilot distance, pilot joined on exact (session_id, t_utc)"),
+                          ("desc_hold_median_s", "median time between position changes"),
+                          ("desc_hold_jump_median_m", "median displacement at a position change")):
+            fz.add("Descriptive", key_, ps[key_], psrc, sel, "m")
+        plog = {k: (round(v, 4) if isinstance(v, float) else v) for k, v in ps.items() if k.startswith("_")}
+        plog["projection"] = "local equirectangular"
+        fz.notes = [f"pitfall_stats {k}: {v}" for k, v in plog.items()]
+        print("pitfall log:", plog)
+
+        # --- Block B: keys that were derived outside the freeze (rules in analysis/b_keys.py)
+        from analysis.b_keys import b_keys
+        total_s = next(r["value"] for r in fz.rows if r["key"] == "desc_total_flight_time_s")
+        f3_dir = root / (a.f3_dir or f"{a.mechanism}/diagnostics")
+        op_map = {"consortium": "consortium", **{raw: f"op{al}" for raw, al in alias.items()}}
+        bk = b_keys(total_s, root / a.anatel, f3_dir, op_map, n_sessions=ps["_n_flights"])
+        kinds = {"desc_total_flight_time_h": ("Descriptive", "dec1"), "inv_n_sites": ("Inventory and truncation", "int"),
+                 "mech_R1000_max_d3_verifiable_all": ("Mechanism (exploratory)", "m")}
+        for raw_ in op_map:                                      # hash every input of block B
+            fz._src(f3_dir / f"f3_sessions_{raw_}.csv")
+        for key_, val in bk.items():
+            sec, kind = kinds.get(key_, ("Mechanism (exploratory)", "rho"))
+            raw_of = {v: k for k, v in op_map.items()}
+            sc_ = key_.rsplit("_", 1)[-1]
+            src = root / a.anatel if key_ == "inv_n_sites" else f3_dir / f"f3_sessions_{raw_of.get(sc_, 'consortium')}.csv"
+            if key_ == "desc_total_flight_time_h":
+                src = next(root / r["source"] for r in fz.rows if r["key"] == "desc_total_flight_time_s")
+            fz.add(sec, key_, val, src, f"analysis/b_keys.py::{key_}", kind)
     # --- write
     out = root / a.out
     out.mkdir(parents=True, exist_ok=True)
@@ -267,6 +309,8 @@ def main() -> int:
             md += [f"| `{r.key}` | {r.formatted.replace(chr(92) + '%', '%')} | `{r.source}` | {r.selector} |"
                    for r in part.itertuples()]
             md.append("")
+        if getattr(fz, "notes", None):
+            md += ["## Freeze log", ""] + [f"- {n}" for n in fz.notes] + [""]
         md += ["## Input files", "", "| File | sha256 |", "|---|---|"]
         md += [f"| `{f}` | `{h}` |" for f, h in sorted(inputs.items())]
         path.write_bytes(("\n".join(md) + "\n").encode())

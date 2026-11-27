@@ -172,7 +172,7 @@ def test_freeze_numbers_are_sourced_and_reproducible(tmp_path):
     cfgp.write_text(yaml.safe_dump(cfg))
     args = ("--map-scenario", "consortium=results/map",
             "--blockO", "results/blockO", "--mechanism", "results/mech", "--map", "results/map", "--out", "results/freeze",
-            "--family", "c1_generic", "--blockS", "s1=results/S1")
+            "--family", "c1_generic", "--blockS", "s1=results/S1", "--skip-derived")
     r = _run("run_freeze.py", root, *args)
     assert r.returncode == 0, r.stderr
     n = pd.read_csv(root / "results/freeze/numbers.csv")
